@@ -9,11 +9,13 @@ class KitcheyApp extends Homey.App {
     this._api = null;
     this._pollInterval = null;
     this._lastShoppingCount = 0;
-    this._firedExpiry = new Set(); // "itemId:YYYY-MM-DD" to avoid re-firing daily
+    // Track which items have fired today: "itemId:YYYY-MM-DD" → Set of daysLeft thresholds fired
+    this._firedExpiry = new Map();
+
+    this._registerFlowCards();
 
     this.homey.settings.on('set', () => this._reinit());
     await this._reinit();
-    this._registerFlowActions();
     this.log('Kitchey ready');
   }
 
@@ -29,7 +31,7 @@ class KitcheyApp extends Homey.App {
 
     this._api = new KitcheyApi({ serverUrl, token, householdId });
     await this._poll();
-    this._pollInterval = setInterval(() => this._poll(), 30 * 60 * 1000); // 30 min
+    this._pollInterval = setInterval(() => this._poll(), 30 * 60 * 1000);
   }
 
   async _poll() {
@@ -49,18 +51,31 @@ class KitcheyApp extends Homey.App {
   _checkExpiry(items) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const todayKey = today.toISOString().slice(0, 10);
 
     for (const item of items) {
       if (!item.expiry_date) continue;
       const exp = new Date(item.expiry_date.slice(0, 10));
+      exp.setHours(0, 0, 0, 0);
       const daysLeft = Math.round((exp - today) / 86400000);
-      const key = `${item.id}:${item.expiry_date.slice(0, 10)}`;
-      if (this._firedExpiry.has(key)) continue;
+      if (daysLeft < 0 || daysLeft > 30) continue;
 
-      this.homey.flow.getTriggerCard('item_expires_soon')
-        .trigger({ item_name: item.name, expiry_date: item.expiry_date.slice(0, 10), quantity: item.quantity })
+      // Fire once per item per day (reset after midnight via key containing today)
+      const fireKey = `${item.id}:${todayKey}`;
+      if (this._firedExpiry.has(fireKey)) continue;
+      this._firedExpiry.set(fireKey, true);
+
+      this._triggerItemExpiresSoon
+        .trigger(
+          { item_name: item.name, expiry_date: item.expiry_date.slice(0, 10), quantity: item.quantity },
+          { daysLeft },
+        )
         .catch(() => {});
-      this._firedExpiry.add(key);
+    }
+
+    // Prune old keys to avoid unbounded growth
+    for (const key of this._firedExpiry.keys()) {
+      if (!key.includes(todayKey)) this._firedExpiry.delete(key);
     }
   }
 
@@ -69,21 +84,36 @@ class KitcheyApp extends Homey.App {
     const prev = this._lastShoppingCount;
     this._lastShoppingCount = unchecked;
     if (unchecked > prev) {
-      this.homey.flow.getTriggerCard('shopping_count_above')
-        .trigger({})
+      this._triggerShoppingCountAbove
+        .trigger({}, { count: unchecked })
         .catch(() => {});
     }
   }
 
-  _registerFlowActions() {
+  _registerFlowCards() {
+    // Triggers
+    this._triggerItemExpiresSoon = this.homey.flow.getTriggerCard('item_expires_soon');
+    this._triggerItemExpiresSoon.registerRunListener(async (args, state) => {
+      // Fire when item's daysLeft is within the threshold set in the flow card
+      return state.daysLeft <= args.days;
+    });
+
+    this._triggerShoppingCountAbove = this.homey.flow.getTriggerCard('shopping_count_above');
+    this._triggerShoppingCountAbove.registerRunListener(async (args, state) => {
+      return state.count > args.count;
+    });
+
+    // Actions
     this.homey.flow.getActionCard('add_to_shopping').registerRunListener(async (args) => {
-      if (!this._api) throw new Error('Kitchey not configured');
-      await this._api.addToShopping(args.name);
+      if (!this._api) throw new Error('Kitchey not configured — check app settings');
+      const { status } = await this._api.addToShopping(args.name);
+      if (status !== 200 && status !== 201) throw new Error(`API error: ${status}`);
     });
 
     this.homey.flow.getActionCard('use_item').registerRunListener(async (args) => {
-      if (!this._api) throw new Error('Kitchey not configured');
-      await this._api.useItem(args.item_id, args.amount ?? 1);
+      if (!this._api) throw new Error('Kitchey not configured — check app settings');
+      const { status } = await this._api.useItem(args.item_id, args.amount ?? 1);
+      if (status !== 200) throw new Error(`API error: ${status}`);
     });
   }
 }

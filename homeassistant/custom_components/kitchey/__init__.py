@@ -24,7 +24,11 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    _register_services(hass, coordinator)
+
+    # Register services once (guard against multiple config entries)
+    if not hass.services.has_service(DOMAIN, "add_to_shopping"):
+        _register_services(hass)
+
     return True
 
 
@@ -32,14 +36,28 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
+    # Remove services when last entry is removed
+    if not hass.data.get(DOMAIN):
+        hass.services.async_remove(DOMAIN, "add_to_shopping")
+        hass.services.async_remove(DOMAIN, "use_item")
     return unload_ok
 
 
-def _register_services(hass: HomeAssistant, coordinator: KitcheyCoordinator) -> None:
+def _register_services(hass: HomeAssistant) -> None:
+    def _first_coordinator() -> KitcheyCoordinator | None:
+        entries = hass.data.get(DOMAIN, {})
+        return next(iter(entries.values()), None)
+
     async def handle_add_to_shopping(call: ServiceCall) -> None:
+        coordinator = _first_coordinator()
+        if coordinator is None:
+            raise Exception("No Kitchey integration configured")
         await coordinator.async_add_to_shopping(call.data["name"])
 
     async def handle_use_item(call: ServiceCall) -> None:
+        coordinator = _first_coordinator()
+        if coordinator is None:
+            raise Exception("No Kitchey integration configured")
         await coordinator.async_use_item(call.data["item_id"], call.data.get("amount", 1))
 
     hass.services.async_register(
