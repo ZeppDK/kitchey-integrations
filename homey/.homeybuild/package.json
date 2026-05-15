@@ -1,0 +1,15 @@
+{
+  "name": "dk.kitchey.homey",
+  "version": "1.0.0",
+  "description": "Kitchey integration for Homey",
+  "main": "app.js",
+  "scripts": {
+    "validate": "homey app validate"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "devDependencies": {
+    "homey": "*"
+  }
+}
