@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitchey Settings</title>
+  <script src="https://cdn.athom.com/homey-apps-sdk-v3/homey.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-size: 14px;
+      color: #1a1a1a;
+      background: #f5f5f7;
+      padding: 20px;
+    }
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    }
+    h2 {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #888;
+      margin-bottom: 14px;
+    }
+    label { display: block; font-size: 13px; font-weight: 500; color: #444; margin-bottom: 5px; }
+    .hint { font-size: 11px; color: #999; margin-bottom: 10px; line-height: 1.4; }
+    input {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fafafa;
+      margin-bottom: 14px;
+      outline: none;
+    }
+    input:focus { border-color: #4CAF82; background: white; }
+    .mono { font-family: monospace; font-size: 12px; }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #4CAF82;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    #msg {
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      margin-bottom: 14px;
+      display: none;
+    }
+    #msg.ok  { background: #e8f5ee; color: #2e7d52; display: block; }
+    #msg.err { background: #fde8e8; color: #c0392b; display: block; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Server</h2>
+  <label>Server URL</label>
+  <p class="hint">Standard Kitchey-server, eller din selvhostede URL.</p>
+  <input type="url" id="server_url" placeholder="https://freshtrack.aihuset.dk" />
+</div>
+
+<div class="card">
+  <h2>Adgang</h2>
+  <label>Personal Access Token</label>
+  <p class="hint">Opret under Indstillinger → Avanceret → API-adgangsnøgler i Kitchey-appen.</p>
+  <input type="password" id="token" class="mono" placeholder="ft_live_…" autocomplete="off" />
+
+  <label>Husstand-ID</label>
+  <p class="hint">Find under Indstillinger → Mine hjem i Kitchey-appen.</p>
+  <input type="text" id="household_id" class="mono" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
+</div>
+
+<div id="msg"></div>
+<button id="save">Gem indstillinger</button>
+
+<script>
+  function onHomeyReady(Homey) {
+    Homey.ready();
+
+    Promise.all([
+      Homey.get('server_url'),
+      Homey.get('token'),
+      Homey.get('household_id'),
+    ]).then(function(values) {
+      document.getElementById('server_url').value   = values[0] || 'https://freshtrack.aihuset.dk';
+      document.getElementById('token').value        = values[1] || '';
+      document.getElementById('household_id').value = values[2] || '';
+    }).catch(function() {});
+
+    document.getElementById('save').addEventListener('click', function() {
+      var serverUrl   = document.getElementById('server_url').value.trim() || 'https://freshtrack.aihuset.dk';
+      var token       = document.getElementById('token').value.trim();
+      var householdId = document.getElementById('household_id').value.trim();
+
+      if (!token)       return flash('Indtast din Personal Access Token', 'err');
+      if (!householdId) return flash('Indtast dit husstand-ID', 'err');
+
+      Promise.all([
+        Homey.set('server_url',   serverUrl),
+        Homey.set('token',        token),
+        Homey.set('household_id', householdId),
+      ]).then(function() {
+        flash('✓ Indstillinger gemt', 'ok');
+      }).catch(function(e) {
+        flash('Fejl: ' + e.message, 'err');
+      });
+    });
+
+    function flash(text, type) {
+      var el = document.getElementById('msg');
+      el.textContent = text;
+      el.className = type;
+      setTimeout(function() { el.className = ''; el.style.display = 'none'; }, 4000);
+    }
+  }
+</script>
+</body>
+</html>
