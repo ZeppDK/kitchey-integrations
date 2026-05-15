@@ -29,6 +29,10 @@
           "en": "An item expires within {{days}} days",
           "da": "En vare udløber inden for {{days}} dage"
         },
+        "titleFormatted": {
+          "en": "An item expires within [[days]] days",
+          "da": "En vare udløber inden for [[days]] dage"
+        },
         "args": [
           {
             "type": "number",
@@ -51,6 +55,10 @@
           "en": "Shopping list has more than {{count}} items",
           "da": "Indkøbslisten har mere end {{count}} varer"
         },
+        "titleFormatted": {
+          "en": "Shopping list has more than [[count]] items",
+          "da": "Indkøbslisten har mere end [[count]] varer"
+        },
         "args": [
           {
             "type": "number",
@@ -70,6 +78,10 @@
           "en": "Add [[name]] to shopping list",
           "da": "Tilføj [[name]] til indkøbslisten"
         },
+        "titleFormatted": {
+          "en": "Add [[name]] to shopping list",
+          "da": "Tilføj [[name]] til indkøbslisten"
+        },
         "args": [
           {
             "type": "text",
@@ -83,6 +95,10 @@
         "title": {
           "en": "Mark item [[item_id]] as used ([[amount]]×)",
           "da": "Marker vare [[item_id]] som brugt ([[amount]]×)"
+        },
+        "titleFormatted": {
+          "en": "Mark item [[item_id]] as used [[amount]]×",
+          "da": "Marker vare [[item_id]] som brugt [[amount]]×"
         },
         "args": [
           {
