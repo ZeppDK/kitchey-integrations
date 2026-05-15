@@ -93,19 +93,18 @@
       {
         "id": "use_item",
         "title": {
-          "en": "Mark item [[item_id]] as used ([[amount]]×)",
-          "da": "Marker vare [[item_id]] som brugt ([[amount]]×)"
+          "en": "Mark [[item]] as used ([[amount]]×)",
+          "da": "Marker [[item]] som brugt ([[amount]]×)"
         },
         "titleFormatted": {
-          "en": "Mark item [[item_id]] as used [[amount]]×",
-          "da": "Marker vare [[item_id]] som brugt [[amount]]×"
+          "en": "Mark [[item]] as used [[amount]]×",
+          "da": "Marker [[item]] som brugt [[amount]]×"
         },
         "args": [
           {
-            "type": "number",
-            "name": "item_id",
-            "title": { "en": "Item ID", "da": "Vare-ID" },
-            "min": 1
+            "type": "autocomplete",
+            "name": "item",
+            "title": { "en": "Item", "da": "Vare" }
           },
           {
             "type": "number",

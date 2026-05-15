@@ -110,9 +110,24 @@ class KitcheyApp extends Homey.App {
       if (status !== 200 && status !== 201) throw new Error(`API error: ${status}`);
     });
 
-    this.homey.flow.getActionCard('use_item').registerRunListener(async (args) => {
+    const useItemCard = this.homey.flow.getActionCard('use_item');
+    useItemCard.registerAutocompleteListener('item', async (query) => {
+      if (!this._api) return [];
+      try {
+        const inventory = await this._api.getInventory();
+        return inventory
+          .filter(i => !query || i.name.toLowerCase().includes(query.toLowerCase()))
+          .slice(0, 50)
+          .map(i => ({
+            id: i.id,
+            name: i.name,
+            description: `Antal: ${i.quantity}${i.expiry_date ? ' · Udløber: ' + i.expiry_date.slice(0, 10) : ''}`,
+          }));
+      } catch { return []; }
+    });
+    useItemCard.registerRunListener(async (args) => {
       if (!this._api) throw new Error('Kitchey not configured — check app settings');
-      const { status } = await this._api.useItem(args.item_id, args.amount ?? 1);
+      const { status } = await this._api.useItem(args.item.id, args.amount ?? 1);
       if (status !== 200) throw new Error(`API error: ${status}`);
     });
   }
