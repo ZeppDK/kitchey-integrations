@@ -106,23 +106,23 @@
     {
       "id": "server_url",
       "type": "text",
-      "label": { "en": "Server URL", "da": "Server-URL" },
+      "title": { "en": "Server URL", "da": "Server-URL" },
       "value": "https://freshtrack.aihuset.dk",
-      "hint": { "en": "Leave as default to use the Kitchey cloud server, or enter your self-hosted URL." }
+      "hint": { "en": "Leave as default to use the Kitchey cloud server, or enter your self-hosted URL.", "da": "Lad stå som standard for at bruge Kitchey-cloudserveren, eller indtast din selvhostede URL." }
     },
     {
       "id": "token",
       "type": "password",
-      "label": { "en": "Personal Access Token", "da": "Adgangsnøgle" },
+      "title": { "en": "Personal Access Token", "da": "Adgangsnøgle" },
       "value": "",
-      "hint": { "en": "Generate a token in the Kitchey app: Settings → Advanced → API Keys." }
+      "hint": { "en": "Generate a token in the Kitchey app: Settings → Advanced → API Keys.", "da": "Generer en nøgle i Kitchey-appen: Indstillinger → Avanceret → API-nøgler." }
     },
     {
       "id": "household_id",
       "type": "text",
-      "label": { "en": "Household ID", "da": "Husstand-ID" },
+      "title": { "en": "Household ID", "da": "Husstand-ID" },
       "value": "",
-      "hint": { "en": "Your household ID. Found after saving the token — the app shows it, or check the API Keys section." }
+      "hint": { "en": "Your household ID. Found after saving the token in the Kitchey app.", "da": "Dit husstand-ID. Findes i Kitchey-appen efter du har gemt din nøgle." }
     }
   ]
 }
