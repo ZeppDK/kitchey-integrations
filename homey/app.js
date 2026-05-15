@@ -111,7 +111,7 @@ class KitcheyApp extends Homey.App {
     });
 
     const useItemCard = this.homey.flow.getActionCard('use_item');
-    useItemCard.registerAutocompleteListener('item', async (query) => {
+    useItemCard.registerArgumentAutocompleteListener('item', async (query) => {
       if (!this._api) return [];
       try {
         const inventory = await this._api.getInventory();
