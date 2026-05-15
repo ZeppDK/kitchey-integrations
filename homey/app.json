@@ -1,0 +1,128 @@
+{
+  "id": "dk.kitchey.homey",
+  "version": "1.0.0",
+  "compatibility": ">=5.0.0",
+  "sdk": 3,
+  "name": {
+    "en": "Kitchey",
+    "da": "Kitchey"
+  },
+  "description": {
+    "en": "Connect your Kitchey fridge inventory to Homey flows.",
+    "da": "Forbind dit Kitchey-lager til Homey-flows."
+  },
+  "category": ["tools"],
+  "permissions": [],
+  "images": {
+    "small": "/assets/images/small.png",
+    "large": "/assets/images/large.png"
+  },
+  "author": {
+    "name": "Kitchey",
+    "email": "kundeservice@aihuset.dk"
+  },
+  "flow": {
+    "triggers": [
+      {
+        "id": "item_expires_soon",
+        "title": {
+          "en": "An item expires within {{days}} days",
+          "da": "En vare udløber inden for {{days}} dage"
+        },
+        "args": [
+          {
+            "type": "number",
+            "name": "days",
+            "title": { "en": "Days", "da": "Dage" },
+            "min": 1,
+            "max": 30,
+            "step": 1
+          }
+        ],
+        "tokens": [
+          { "name": "item_name", "type": "string", "title": { "en": "Item name" } },
+          { "name": "expiry_date", "type": "string", "title": { "en": "Expiry date" } },
+          { "name": "quantity", "type": "number", "title": { "en": "Quantity" } }
+        ]
+      },
+      {
+        "id": "shopping_count_above",
+        "title": {
+          "en": "Shopping list has more than {{count}} items",
+          "da": "Indkøbslisten har mere end {{count}} varer"
+        },
+        "args": [
+          {
+            "type": "number",
+            "name": "count",
+            "title": { "en": "Count", "da": "Antal" },
+            "min": 1,
+            "max": 100,
+            "step": 1
+          }
+        ]
+      }
+    ],
+    "actions": [
+      {
+        "id": "add_to_shopping",
+        "title": {
+          "en": "Add [[name]] to shopping list",
+          "da": "Tilføj [[name]] til indkøbslisten"
+        },
+        "args": [
+          {
+            "type": "text",
+            "name": "name",
+            "title": { "en": "Item name", "da": "Varenavn" }
+          }
+        ]
+      },
+      {
+        "id": "use_item",
+        "title": {
+          "en": "Mark item [[item_id]] as used ([[amount]]×)",
+          "da": "Marker vare [[item_id]] som brugt ([[amount]]×)"
+        },
+        "args": [
+          {
+            "type": "number",
+            "name": "item_id",
+            "title": { "en": "Item ID", "da": "Vare-ID" },
+            "min": 1
+          },
+          {
+            "type": "number",
+            "name": "amount",
+            "title": { "en": "Amount", "da": "Antal" },
+            "min": 1,
+            "step": 1
+          }
+        ]
+      }
+    ]
+  },
+  "settings": [
+    {
+      "id": "server_url",
+      "type": "text",
+      "label": { "en": "Server URL", "da": "Server-URL" },
+      "value": "https://freshtrack.aihuset.dk",
+      "hint": { "en": "Leave as default to use the Kitchey cloud server, or enter your self-hosted URL." }
+    },
+    {
+      "id": "token",
+      "type": "password",
+      "label": { "en": "Personal Access Token", "da": "Adgangsnøgle" },
+      "value": "",
+      "hint": { "en": "Generate a token in the Kitchey app: Settings → Advanced → API Keys." }
+    },
+    {
+      "id": "household_id",
+      "type": "text",
+      "label": { "en": "Household ID", "da": "Husstand-ID" },
+      "value": "",
+      "hint": { "en": "Your household ID. Found after saving the token — the app shows it, or check the API Keys section." }
+    }
+  ]
+}

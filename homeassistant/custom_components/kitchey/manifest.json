@@ -1,0 +1,12 @@
+{
+  "domain": "kitchey",
+  "name": "Kitchey",
+  "version": "1.0.0",
+  "config_flow": true,
+  "documentation": "https://github.com/ZeppDK/kitchey-integrations",
+  "dependencies": [],
+  "codeowners": ["@ZeppDK"],
+  "iot_class": "cloud_polling",
+  "integration_type": "service",
+  "requirements": []
+}
