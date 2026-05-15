@@ -6,7 +6,6 @@
   <title>Kitchey Settings</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
       font-size: 14px;
@@ -14,7 +13,6 @@
       background: #f5f5f7;
       padding: 20px;
     }
-
     .card {
       background: white;
       border-radius: 12px;
@@ -22,7 +20,6 @@
       margin-bottom: 16px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.08);
     }
-
     h2 {
       font-size: 11px;
       font-weight: 700;
@@ -31,22 +28,8 @@
       color: #888;
       margin-bottom: 14px;
     }
-
-    label {
-      display: block;
-      font-size: 13px;
-      font-weight: 500;
-      color: #444;
-      margin-bottom: 5px;
-    }
-
-    .hint {
-      font-size: 11px;
-      color: #999;
-      margin-bottom: 10px;
-      line-height: 1.4;
-    }
-
+    label { display: block; font-size: 13px; font-weight: 500; color: #444; margin-bottom: 5px; }
+    .hint { font-size: 11px; color: #999; margin-bottom: 10px; line-height: 1.4; }
     input {
       width: 100%;
       padding: 10px 12px;
@@ -56,19 +39,9 @@
       background: #fafafa;
       margin-bottom: 14px;
       outline: none;
-      transition: border-color 150ms;
     }
-
     input:focus { border-color: #4CAF82; background: white; }
-
-    input[type="password"] { letter-spacing: 0.1em; }
-
-    .monospace {
-      font-family: 'SF Mono', 'Fira Code', monospace;
-      font-size: 12px;
-      letter-spacing: 0;
-    }
-
+    .mono { font-family: monospace; font-size: 12px; }
     button {
       width: 100%;
       padding: 12px;
@@ -79,21 +52,16 @@
       font-size: 15px;
       font-weight: 600;
       cursor: pointer;
-      transition: opacity 150ms;
     }
-
-    button:active { opacity: 0.8; }
-
-    .msg {
-      display: none;
+    #msg {
       padding: 10px 14px;
       border-radius: 8px;
       font-size: 13px;
       margin-bottom: 14px;
+      display: none;
     }
-
-    .msg.ok { background: #e8f5ee; color: #2e7d52; display: block; }
-    .msg.err { background: #fde8e8; color: #c0392b; display: block; }
+    #msg.ok { background: #e8f5ee; color: #2e7d52; display: block; }
+    #msg.err { background: #fde8e8; color: #c0392b; display: block; }
   </style>
 </head>
 <body>
@@ -101,63 +69,62 @@
 <div class="card">
   <h2>Server</h2>
   <label>Server URL</label>
-  <p class="hint">Brug standard Kitchey-serveren, eller angiv din selvhostede server-URL.</p>
+  <p class="hint">Standard Kitchey-server, eller din selvhostede server.</p>
   <input type="url" id="server_url" placeholder="https://freshtrack.aihuset.dk" />
 </div>
 
 <div class="card">
   <h2>Adgang</h2>
   <label>Personal Access Token</label>
-  <p class="hint">Opret en nøgle i Kitchey-appen under Indstillinger → Avanceret → API-adgangsnøgler.</p>
-  <input type="password" id="token" class="monospace" placeholder="ft_live_…" autocomplete="off" />
+  <p class="hint">Opret under Indstillinger → Avanceret → API-adgangsnøgler i Kitchey-appen.</p>
+  <input type="password" id="token" class="mono" placeholder="ft_live_…" autocomplete="off" />
 
   <label>Husstand-ID</label>
-  <p class="hint">Find dit husstand-ID i Kitchey-appen under Indstillinger → Mine hjem.</p>
-  <input type="text" id="household_id" class="monospace" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
+  <p class="hint">Find under Indstillinger → Mine hjem i Kitchey-appen.</p>
+  <input type="text" id="household_id" class="mono" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
 </div>
 
-<div id="msg" class="msg"></div>
-
+<div id="msg"></div>
 <button id="save">Gem indstillinger</button>
 
 <script>
-  function onHomeyReady(Homey) {
+  window.onHomeyReady = async function(Homey) {
     Homey.ready();
 
-    // Load current values
-    Homey.get('server_url', function(err, val) {
-      document.getElementById('server_url').value = val || 'https://freshtrack.aihuset.dk';
-    });
-    Homey.get('token', function(err, val) {
-      document.getElementById('token').value = val || '';
-    });
-    Homey.get('household_id', function(err, val) {
-      document.getElementById('household_id').value = val || '';
-    });
+    try {
+      const serverUrl  = await Homey.get('server_url');
+      const token      = await Homey.get('token');
+      const household  = await Homey.get('household_id');
+      document.getElementById('server_url').value   = serverUrl  || 'https://freshtrack.aihuset.dk';
+      document.getElementById('token').value        = token      || '';
+      document.getElementById('household_id').value = household  || '';
+    } catch (e) { /* ignore load errors */ }
 
-    document.getElementById('save').addEventListener('click', function() {
-      var serverUrl = document.getElementById('server_url').value.trim() || 'https://freshtrack.aihuset.dk';
-      var token = document.getElementById('token').value.trim();
+    document.getElementById('save').addEventListener('click', async function() {
+      var serverUrl   = document.getElementById('server_url').value.trim() || 'https://freshtrack.aihuset.dk';
+      var token       = document.getElementById('token').value.trim();
       var householdId = document.getElementById('household_id').value.trim();
 
-      if (!token) return showMsg('Indtast din Personal Access Token', 'err');
-      if (!householdId) return showMsg('Indtast dit husstand-ID', 'err');
+      if (!token)       return flash('Indtast din Personal Access Token', 'err');
+      if (!householdId) return flash('Indtast dit husstand-ID', 'err');
 
-      Homey.set('server_url', serverUrl);
-      Homey.set('token', token);
-      Homey.set('household_id', householdId, function(err) {
-        if (err) return showMsg('Fejl ved gemning: ' + err.message, 'err');
-        showMsg('✓ Indstillinger gemt', 'ok');
-      });
+      try {
+        await Homey.set('server_url',   serverUrl);
+        await Homey.set('token',        token);
+        await Homey.set('household_id', householdId);
+        flash('✓ Indstillinger gemt', 'ok');
+      } catch (e) {
+        flash('Fejl: ' + e.message, 'err');
+      }
     });
 
-    function showMsg(text, type) {
+    function flash(text, type) {
       var el = document.getElementById('msg');
       el.textContent = text;
-      el.className = 'msg ' + type;
-      setTimeout(function() { el.className = 'msg'; }, 4000);
+      el.className = type;
+      setTimeout(function() { el.className = ''; }, 4000);
     }
-  }
+  };
 </script>
 </body>
 </html>
