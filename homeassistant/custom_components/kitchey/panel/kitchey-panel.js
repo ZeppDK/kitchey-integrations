@@ -254,8 +254,11 @@
         .filters { display:flex; gap:6px; padding:0 16px 8px; flex-wrap:wrap; }
         .f-btn { padding:4px 12px; border:1px solid #e0e0e0; border-radius:16px; background:none; font-size:12px; color:#666; cursor:pointer; }
         .f-btn.active { background:${GREEN}; color:#fff; border-color:${GREEN}; }
-        .list { padding:0 8px 8px; }
-        .row { display:flex; align-items:center; gap:10px; padding:10px 8px; border-radius:8px; }
+        .list { padding:0 0 8px; }
+        .unit-section { margin-bottom:4px; }
+        .unit-hdr { display:flex; align-items:center; gap:8px; padding:10px 16px 6px; background:${BG}; font-size:12px; font-weight:700; color:#555; text-transform:uppercase; letter-spacing:.05em; }
+        .loc-hdr { padding:6px 16px 2px; font-size:11px; font-weight:600; color:#aaa; text-transform:uppercase; letter-spacing:.04em; }
+        .row { display:flex; align-items:center; gap:10px; padding:10px 16px; }
         .row.clickable { cursor:pointer; }
         .row.clickable:hover { background:${BG}; }
         .info { flex:1; min-width:0; }
@@ -373,42 +376,68 @@
     // ── Lager tab ─────────────────────────────────────────────────────────────
 
     _htmlLager() {
-      const unitBtns = [
-        `<button class="f-btn${this._filterUnit === 'all' ? ' active' : ''}" data-unit="all">Alle</button>`,
-        ...this._storageUnits.map(u =>
-          `<button class="f-btn${this._filterUnit === u.id ? ' active' : ''}" data-unit="${esc(u.id)}">${esc(u.name)}</button>`
-        ),
-      ].join('');
+      // Category filter tabs (by list_type, matching app behaviour)
+      const catBtns = [
+        { key: 'all',     label: 'Alle' },
+        { key: 'freezer', label: `${CATEGORY_ICONS.freezer} Fryser` },
+        { key: 'fridge',  label: `${CATEGORY_ICONS.fridge} Køleskab` },
+        { key: 'pantry',  label: `${CATEGORY_ICONS.pantry} Kolonial` },
+      ].map(c =>
+        `<button class="f-btn${this._filterUnit === c.key ? ' active' : ''}" data-unit="${c.key}">${c.label}</button>`
+      ).join('');
 
-      const filtered = this._inventory.filter(item => {
-        const matchUnit = this._filterUnit === 'all' || item.storage_unit_id === this._filterUnit;
-        const q = this._searchLager.toLowerCase();
-        const n = (item.product_name || item.custom_name || '').toLowerCase();
-        return matchUnit && (!q || n.includes(q));
-      });
+      const q = this._searchLager.toLowerCase();
 
-      const rows = filtered.map(item => {
-        const name    = item.name || item.product_name || item.custom_name || 'Ukendt';
-        const unit    = this._storageUnits.find(u => u.id === item.storage_unit_id);
-        const loc     = item.location_name || '';
-        const sub     = [unit?.name, loc].filter(Boolean).join(' · ');
-        const expBadge = expiryBadge(item.expiry_date);
+      // Units visible in the current category filter
+      const visibleUnits = this._filterUnit === 'all'
+        ? this._storageUnits
+        : this._storageUnits.filter(u => u.list_type === this._filterUnit);
+
+      const itemRow = (item) => {
+        const name = item.name || item.product_name || item.custom_name || 'Ukendt';
         return `<div class="row clickable" data-inv-id="${esc(item.id)}">
-          <div class="info">
-            <div class="name">${esc(name)}</div>
-            ${sub ? `<div class="sub">${esc(sub)}</div>` : ''}
-          </div>
+          <div class="info"><div class="name">${esc(name)}</div></div>
           <span class="badge badge-grey">${item.quantity ?? 0} stk</span>
-          ${expBadge}
+          ${expiryBadge(item.expiry_date)}
           <span class="chevron">›</span>
+        </div>`;
+      };
+
+      let anyItems = false;
+      const sections = visibleUnits.map(unit => {
+        const unitLocs = this._locations.filter(l => l.storage_unit_id === unit.id);
+        const unitItems = this._inventory.filter(i =>
+          i.storage_unit_id === unit.id && (!q || (i.name || '').toLowerCase().includes(q))
+        );
+        if (unitItems.length === 0) return '';
+        anyItems = true;
+
+        const knownLocIds = new Set(unitLocs.map(l => l.id));
+        const byLoc = unitLocs
+          .map(loc => ({ loc, items: unitItems.filter(i => i.location_id === loc.id) }))
+          .filter(g => g.items.length > 0);
+        const noLoc = unitItems.filter(i => !i.location_id || !knownLocIds.has(i.location_id));
+
+        const locSections = [
+          ...byLoc.map(({ loc, items: li }) =>
+            `<div class="loc-hdr">${esc(loc.name)}</div>${li.map(itemRow).join('')}`
+          ),
+          noLoc.length > 0
+            ? `${byLoc.length > 0 ? '<div class="loc-hdr">Ingen placering</div>' : ''}${noLoc.map(itemRow).join('')}`
+            : '',
+        ].join('');
+
+        return `<div class="unit-section">
+          <div class="unit-hdr"><span>${CATEGORY_ICONS[unit.list_type] || '📦'} ${esc(unit.name)}</span></div>
+          ${locSections}
         </div>`;
       }).join('');
 
       return `
         <div class="card">
           <div class="srch"><input class="srch-input" id="lager-search" placeholder="Søg lagervare…" value="${esc(this._searchLager)}"/></div>
-          <div class="filters">${unitBtns}</div>
-          <div class="list">${rows || '<div class="empty">Ingen varer fundet</div>'}</div>
+          <div class="filters">${catBtns}</div>
+          <div class="list">${anyItems ? sections : '<div class="empty">Ingen varer fundet</div>'}</div>
         </div>`;
     }
 
@@ -527,59 +556,61 @@
           </div>
         </div>`;
 
-      // Storage units
-      const unitRows = this._storageUnits.map(u => `
-        <div class="unit-row">
-          <div><div class="unit-name">${esc(u.name)}</div><div class="unit-type">${CATEGORY_LABELS[u.list_type] || esc(u.list_type || '')}</div></div>
-          <button class="del-btn" data-del-unit="${esc(u.id)}" title="Slet">🗑</button>
-        </div>`).join('');
+      // Storage units + shelves combined (nested, matching app structure)
+      const premLockUnit = isPrem === false
+        ? `<div class="lock-row">🔒 Premium kræves for at oprette ekstra lagerenheder på Kitchey cloud. Opgrader i Kitchey-appen.</div>`
+        : '';
+      const premLockShelf = isPrem === false
+        ? `<div class="lock-row" style="margin-top:6px">🔒 Premium kræves for at oprette ekstra hylder.</div>`
+        : '';
 
-      const unitCreateForm = isPrem ? `
+      const unitSections = this._storageUnits.map(u => {
+        const shelves = this._locations.filter(l => l.storage_unit_id === u.id);
+        const shelfRows = shelves.map(l =>
+          `<div class="unit-row" style="padding-left:12px">
+            <div class="unit-name" style="font-size:13px">📌 ${esc(l.name)}</div>
+            <button class="del-btn" data-del-shelf="${esc(l.id)}" title="Slet hylde">🗑</button>
+          </div>`
+        ).join('');
+
+        const addShelfForm = isPrem ? `
+          <div style="display:flex;gap:6px;padding:6px 0 2px 12px">
+            <input class="inp" data-new-shelf-for="${esc(u.id)}" placeholder="Ny hylde…" style="flex:1;font-size:13px;padding:7px 10px"/>
+            <button class="btn btn-primary" data-add-shelf-for="${esc(u.id)}" style="padding:7px 12px;font-size:13px">+</button>
+          </div>` : premLockShelf;
+
+        return `
+          <div style="border-bottom:1px solid #f0f0f0;padding:10px 0 8px">
+            <div style="display:flex;align-items:center;gap:8px;padding:0 4px 6px">
+              <span style="font-size:16px">${CATEGORY_ICONS[u.list_type] || '📦'}</span>
+              <div style="flex:1">
+                <div class="unit-name">${esc(u.name)}</div>
+                <div class="unit-type">${CATEGORY_LABELS[u.list_type] || ''}</div>
+              </div>
+              <button class="del-btn" data-del-unit="${esc(u.id)}" title="Slet enhed">🗑</button>
+            </div>
+            ${shelfRows}
+            ${addShelfForm}
+          </div>`;
+      }).join('');
+
+      const newUnitForm = isPrem ? `
         <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <input class="inp" id="new-unit-name" placeholder="Navn på enhed" style="flex:1;min-width:120px"/>
+          <input class="inp" id="new-unit-name" placeholder="Navn på ny enhed" style="flex:1;min-width:120px"/>
           <select class="inp" id="new-unit-type" style="width:120px">
             <option value="fridge">Køleskab</option>
             <option value="freezer">Fryser</option>
             <option value="pantry">Kolonial</option>
           </select>
           <button class="btn btn-primary" id="create-unit-btn">Opret</button>
-        </div>` : (isPrem === false ? `
-        <div class="lock-row">🔒 Premium kræves for at oprette ekstra lagerenheder på Kitchey cloud. Opgrader i Kitchey-appen.</div>` : '');
+        </div>` : premLockUnit;
 
       const unitsHtml = `
         <div class="card">
-          <div class="card-hdr">Lagerenheder</div>
+          <div class="card-hdr">Lagerenheder & Hylder</div>
           <div class="card-body">
-            ${unitRows || '<div class="empty" style="padding:8px 0">Ingen lagerenheder</div>'}
-            ${unitCreateForm}
-          </div>
-        </div>`;
-
-      // Shelves
-      const shelfRows = this._locations.map(l => {
-        const unit = this._storageUnits.find(u => u.id === l.storage_unit_id);
-        return `<div class="unit-row">
-          <div><div class="unit-name">${esc(l.name)}</div><div class="unit-type">${esc(unit?.name || '')}</div></div>
-          <button class="del-btn" data-del-shelf="${esc(l.id)}" title="Slet">🗑</button>
-        </div>`;
-      }).join('');
-
-      const shelfCreateForm = isPrem ? `
-        <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
-          <input class="inp" id="new-shelf-name" placeholder="Navn på hylde" style="flex:1;min-width:120px"/>
-          <select class="inp" id="new-shelf-unit" style="width:140px">
-            ${this._storageUnits.map(u => `<option value="${esc(u.id)}">${esc(u.name)}</option>`).join('')}
-          </select>
-          <button class="btn btn-primary" id="create-shelf-btn">Opret</button>
-        </div>` : (isPrem === false ? `
-        <div class="lock-row">🔒 Premium kræves for at oprette ekstra hylder på Kitchey cloud.</div>` : '');
-
-      const shelvesHtml = `
-        <div class="card">
-          <div class="card-hdr">Hylder</div>
-          <div class="card-body">
-            ${shelfRows || '<div class="empty" style="padding:8px 0">Ingen hylder</div>'}
-            ${shelfCreateForm}
+            ${unitSections || '<div class="empty" style="padding:8px 0">Ingen lagerenheder</div>'}
+            ${newUnitForm}
           </div>
         </div>`;
 
@@ -613,7 +644,7 @@
           </div>
         </div>`;
 
-      return `${err}${hhHtml}${unitsHtml}${shelvesHtml}${prefHtml}${profileHtml}`;
+      return `${err}${hhHtml}${unitsHtml}${prefHtml}${profileHtml}`;
     }
 
     // ── Drawer (inventory item edit) ──────────────────────────────────────────
@@ -832,15 +863,19 @@
           } catch (e) { this._errors.settings = e.message; this._render(); }
         })
       );
-      root.querySelector('#create-shelf-btn')?.addEventListener('click', async () => {
-        const name   = root.querySelector('#new-shelf-name')?.value.trim();
-        const unitId = root.querySelector('#new-shelf-unit')?.value;
-        if (!name || !unitId) return;
-        try {
-          await this._api('POST', '/api/locations', { name, storage_unit_id: unitId });
-          await this._fetchAll(); this._render();
-        } catch (e) { this._errors.settings = e.message; this._render(); }
-      });
+      root.querySelectorAll('[data-add-shelf-for]').forEach(btn =>
+        btn.addEventListener('click', async () => {
+          const unitId = btn.dataset.addShelfFor;
+          const inp = root.querySelector(`[data-new-shelf-for="${unitId}"]`);
+          const name = inp?.value.trim();
+          if (!name || !unitId) return;
+          try {
+            await this._api('POST', '/api/locations', { name, storage_unit_id: unitId });
+            if (inp) inp.value = '';
+            await this._fetchAll(); this._render();
+          } catch (e) { this._errors.settings = e.message; this._render(); }
+        })
+      );
       root.querySelectorAll('[data-del-shelf]').forEach(btn =>
         btn.addEventListener('click', async () => {
           if (!confirm('Slet hylde?')) return;
