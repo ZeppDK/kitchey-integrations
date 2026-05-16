@@ -38,6 +38,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not hass.data.get(DOMAIN):
         for svc in (
             "add_to_shopping",
+            "update_shopping_item",
             "delete_shopping_item",
             "check_shopping_item",
             "use_item",
@@ -69,6 +70,16 @@ def _register_services(hass: HomeAssistant) -> None:
         if c is None:
             raise Exception("No Kitchey integration configured")
         await c.async_delete_shopping_item(call.data["item_id"])
+
+    async def handle_update_shopping_item(call: ServiceCall) -> None:
+        c = _first_coordinator()
+        if c is None:
+            raise Exception("No Kitchey integration configured")
+        await c.async_update_shopping_item(
+            call.data["item_id"],
+            call.data["quantity"],
+            call.data.get("unit", "stk"),
+        )
 
     async def handle_check_shopping_item(call: ServiceCall) -> None:
         c = _first_coordinator()
@@ -118,6 +129,15 @@ def _register_services(hass: HomeAssistant) -> None:
         schema=vol.Schema({
             vol.Required("name"): cv.string,
             vol.Optional("quantity", default=1): cv.positive_int,
+            vol.Optional("unit", default="stk"): cv.string,
+        }),
+    )
+    hass.services.async_register(
+        DOMAIN, "update_shopping_item",
+        handle_update_shopping_item,
+        schema=vol.Schema({
+            vol.Required("item_id"): cv.string,
+            vol.Required("quantity"): cv.positive_int,
             vol.Optional("unit", default="stk"): cv.string,
         }),
     )

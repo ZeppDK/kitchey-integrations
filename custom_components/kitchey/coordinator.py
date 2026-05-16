@@ -127,6 +127,17 @@ class KitcheyCoordinator(DataUpdateCoordinator):
                 raise Exception(f"delete_shopping_item failed: {resp.status}")
         await self.async_request_refresh()
 
+    async def async_update_shopping_item(self, item_id: str, quantity: int, unit: str) -> None:
+        session = async_get_clientsession(self.hass, verify_ssl=False)
+        async with session.put(
+            f"{self.server_url}/api/shopping/{item_id}",
+            headers=self._headers,
+            json={"quantity": quantity, "unit": unit},
+        ) as resp:
+            if resp.status != 200:
+                raise Exception(f"update_shopping_item failed: {resp.status}")
+        await self.async_request_refresh()
+
     async def async_check_shopping_item(self, item_id: str, checked_by: str = "Home Assistant") -> None:
         session = async_get_clientsession(self.hass, verify_ssl=False)
         async with session.put(

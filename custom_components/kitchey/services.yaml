@@ -29,6 +29,34 @@ add_to_shopping:
       selector:
         text:
 
+update_shopping_item:
+  name: Update shopping item
+  description: Updates the quantity and/or unit of an existing shopping list item.
+  fields:
+    item_id:
+      name: Item ID
+      description: UUID of the shopping item (found in sensor attributes).
+      required: true
+      example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      selector:
+        text:
+    quantity:
+      name: Quantity
+      required: true
+      example: 2
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+    unit:
+      name: Unit
+      required: false
+      default: "stk"
+      example: "liter"
+      selector:
+        text:
+
 delete_shopping_item:
   name: Delete shopping item
   description: Removes an item from the Kitchey shopping list.

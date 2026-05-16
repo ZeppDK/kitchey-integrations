@@ -8,13 +8,15 @@
  *   entity: sensor.kitchey_<household>_indkøbsliste
  *   title: Indkøbsliste    # optional
  *
- * Requires: Home Assistant services kitchey.add_to_shopping and kitchey.check_shopping_item
+ * Requires: Home Assistant services kitchey.add_to_shopping, kitchey.check_shopping_item,
+ *           kitchey.update_shopping_item
  */
 
 class KitcheyShoppingCard extends HTMLElement {
   constructor() {
     super();
     this._pendingChecks = new Set();
+    this._editingId = null;
   }
 
   set hass(hass) {
@@ -34,21 +36,49 @@ class KitcheyShoppingCard extends HTMLElement {
     this._hass.callService(domain, service, data);
   }
 
-  _checkItem(itemId, itemName) {
+  _checkItem(itemId) {
     if (this._pendingChecks.has(itemId)) return;
     this._pendingChecks.add(itemId);
     this._callService('kitchey', 'check_shopping_item', {
       item_id: itemId,
       checked_by: 'Lovelace',
     });
-    // Optimistic re-render: remove item from list temporarily
-    const el = this.querySelector(`[data-id="${itemId}"]`);
+    const el = this.querySelector(`.shop-row[data-id="${itemId}"]`);
     if (el) {
       el.style.opacity = '0.3';
       el.style.textDecoration = 'line-through';
     }
-    // Clear pending after a few seconds (coordinator will refresh)
     setTimeout(() => this._pendingChecks.delete(itemId), 10000);
+  }
+
+  _startEdit(itemId, currentQty, currentUnit) {
+    if (this._editingId === itemId) {
+      this._editingId = null;
+    } else {
+      this._editingId = itemId;
+    }
+    this._render();
+    // Focus qty input after render
+    if (this._editingId) {
+      setTimeout(() => {
+        const el = this.querySelector(`#edit-qty-${itemId}`);
+        if (el) el.focus();
+      }, 0);
+    }
+  }
+
+  _saveEdit(itemId) {
+    const qtyEl  = this.querySelector(`#edit-qty-${itemId}`);
+    const unitEl = this.querySelector(`#edit-unit-${itemId}`);
+    const quantity = parseInt(qtyEl?.value) || 1;
+    const unit = unitEl?.value.trim() || 'stk';
+    this._callService('kitchey', 'update_shopping_item', {
+      item_id: itemId,
+      quantity,
+      unit,
+    });
+    this._editingId = null;
+    this._render();
   }
 
   _addItem() {
@@ -81,14 +111,26 @@ class KitcheyShoppingCard extends HTMLElement {
 
     const rows = items.map((item) => {
       const name = item.name || 'Ukendt';
-      const qty  = `${item.quantity} ${item.unit || 'stk'}`;
+      const qty  = item.quantity ?? 1;
+      const unit = item.unit || 'stk';
+      const isEditing = this._editingId === item.id;
+
+      const qtyCell = isEditing
+        ? `<div class="edit-inline">
+             <input id="edit-qty-${item.id}"  class="edit-qty"  type="number" min="1" value="${qty}" />
+             <input id="edit-unit-${item.id}" class="edit-unit" type="text"   value="${unit}" />
+             <button class="save-btn" data-id="${item.id}">✓</button>
+           </div>`
+        : `<div class="shop-qty">${qty} ${unit}</div>
+           <button class="edit-btn" data-id="${item.id}" title="Ret antal">✏️</button>`;
+
       return `
-        <div class="shop-row" data-id="${item.id}" title="Tryk for at markere som fundet">
-          <div class="check-btn" data-id="${item.id}">
+        <div class="shop-row" data-id="${item.id}">
+          <div class="check-btn" data-id="${item.id}" title="Markér som fundet">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/></svg>
           </div>
           <div class="shop-name">${name}</div>
-          <div class="shop-qty">${qty}</div>
+          ${qtyCell}
         </div>`;
     }).join('');
 
@@ -103,11 +145,17 @@ class KitcheyShoppingCard extends HTMLElement {
           .card-title   { font-size:15px; font-weight:700; color:var(--primary-text-color); }
           .card-count   { font-size:13px; color:var(--secondary-text-color); background:var(--secondary-background-color); border-radius:12px; padding:2px 9px; }
           .item-list    { padding:0 8px 4px; }
-          .shop-row     { display:flex; align-items:center; gap:10px; padding:8px 8px; border-radius:8px; cursor:pointer; transition:background 120ms; }
-          .shop-row:hover { background:var(--secondary-background-color); }
-          .check-btn    { color:var(--secondary-text-color); flex-shrink:0; display:flex; align-items:center; }
+          .shop-row     { display:flex; align-items:center; gap:10px; padding:8px 8px; border-radius:8px; }
+          .check-btn    { color:var(--secondary-text-color); flex-shrink:0; display:flex; align-items:center; cursor:pointer; }
+          .check-btn:hover { color:var(--primary-color); }
           .shop-name    { flex:1; font-size:14px; color:var(--primary-text-color); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
           .shop-qty     { font-size:13px; color:var(--secondary-text-color); flex-shrink:0; }
+          .edit-btn     { background:none; border:none; cursor:pointer; font-size:13px; padding:2px 4px; opacity:0.5; flex-shrink:0; }
+          .edit-btn:hover { opacity:1; }
+          .edit-inline  { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+          .edit-qty     { width:52px; padding:4px 6px; border:1px solid var(--primary-color); border-radius:6px; background:var(--card-background-color); color:var(--primary-text-color); font-size:13px; text-align:center; outline:none; }
+          .edit-unit    { width:60px; padding:4px 6px; border:1px solid var(--primary-color); border-radius:6px; background:var(--card-background-color); color:var(--primary-text-color); font-size:13px; outline:none; }
+          .save-btn     { padding:4px 8px; background:var(--primary-color); color:var(--text-primary-color); border:none; border-radius:6px; font-size:14px; cursor:pointer; }
           .add-row      { display:flex; gap:8px; padding:8px 16px 4px; }
           .add-row2     { display:flex; gap:8px; padding:4px 16px 12px; }
           .add-input    { flex:1; padding:8px 12px; border:1px solid var(--divider-color); border-radius:8px; background:var(--card-background-color); color:var(--primary-text-color); font-size:14px; outline:none; }
@@ -134,15 +182,48 @@ class KitcheyShoppingCard extends HTMLElement {
         </div>
       </ha-card>`;
 
-    // Attach events after render
-    this.querySelectorAll('.shop-row').forEach((row) => {
-      row.addEventListener('click', () => {
-        const id = row.dataset.id;
-        const name = row.querySelector('.shop-name')?.textContent || '';
-        this._checkItem(id, name);
+    // Check buttons
+    this.querySelectorAll('.check-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._checkItem(btn.dataset.id);
       });
     });
 
+    // Edit toggle buttons
+    this.querySelectorAll('.edit-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const row = btn.closest('.shop-row');
+        const qty  = row.querySelector('.shop-qty')?.textContent.trim().split(' ')[0] || '1';
+        const unit = row.querySelector('.shop-qty')?.textContent.trim().split(' ')[1] || 'stk';
+        this._startEdit(btn.dataset.id, qty, unit);
+      });
+    });
+
+    // Save buttons
+    this.querySelectorAll('.save-btn').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this._saveEdit(btn.dataset.id);
+      });
+    });
+
+    // Enter key in edit fields
+    this.querySelectorAll('.edit-qty, .edit-unit').forEach((input) => {
+      input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          const id = input.id.replace(/^edit-(qty|unit)-/, '');
+          this._saveEdit(id);
+        }
+        if (e.key === 'Escape') {
+          this._editingId = null;
+          this._render();
+        }
+      });
+    });
+
+    // Add item button + enter key
     const addBtn = this.querySelector('#kitchey-add-btn');
     if (addBtn) addBtn.addEventListener('click', () => this._addItem());
 
