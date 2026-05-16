@@ -47,9 +47,14 @@ class KitcheyApp extends Homey.App {
       this._lastInventory = inventory;
       this._lastShopping = shopping;
 
-      // Update capabilities on paired devices
-      this.homey.drivers.getDriver('storage-unit').updateDevices(inventory);
-      this.homey.drivers.getDriver('shopping').updateDevices(shopping);
+      // Sync devices and update capabilities
+      const suDriver = this.homey.drivers.getDriver('storage-unit');
+      const shDriver = this.homey.drivers.getDriver('shopping');
+      await suDriver.syncDevices(storageUnits);
+      suDriver.updateDevices(inventory);
+      const householdId = this.homey.settings.get('household_id');
+      await shDriver.ensureDevice(householdId);
+      shDriver.updateDevices(shopping);
 
       this._checkExpiry(inventory);
       this._checkShopping(shopping);

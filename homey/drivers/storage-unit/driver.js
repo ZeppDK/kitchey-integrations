@@ -7,18 +7,35 @@ class StorageUnitDriver extends Homey.Driver {
     this.log('StorageUnitDriver ready');
   }
 
-  async onPair(session) {
-    const app = this.homey.app;
+  /**
+   * Called by app.js after each poll to sync devices with current storage units.
+   * Creates devices for new units; marks removed units as unavailable.
+   */
+  async syncDevices(storageUnits) {
+    const existing = this.getDevices();
+    const existingIds = new Set(existing.map((d) => d.getData().storage_unit_id));
+    const apiIds = new Set(storageUnits.map((u) => u.id));
 
-    session.setHandler('list_devices', async () => {
-      if (!app._api) throw new Error('Kitchey is not configured — check app settings.');
-      const units = await app._api.getStorageUnits();
-      return units.map((unit) => ({
-        name: unit.name,
-        data: { storage_unit_id: unit.id },
-        settings: { storage_unit_id: unit.id, list_type: unit.list_type || '' },
-      }));
-    });
+    for (const unit of storageUnits) {
+      if (!existingIds.has(unit.id)) {
+        try {
+          await this.createDevice({
+            name: unit.name,
+            data: { storage_unit_id: unit.id },
+            settings: { storage_unit_id: unit.id, list_type: unit.list_type || '' },
+          });
+          this.log(`Created device for unit: ${unit.name}`);
+        } catch (err) {
+          this.error(`Failed to create device for ${unit.name}:`, err.message);
+        }
+      }
+    }
+
+    for (const device of existing) {
+      if (!apiIds.has(device.getData().storage_unit_id)) {
+        device.setUnavailable('Storage unit removed from Kitchey').catch(() => {});
+      }
+    }
   }
 
   /**
