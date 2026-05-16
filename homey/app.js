@@ -47,16 +47,9 @@ class KitcheyApp extends Homey.App {
       this._lastInventory = inventory;
       this._lastShopping = shopping;
 
-      // Update device capabilities
-      const suDriver = this.homey.drivers.getDriver('storage-unit');
-      const shDriver = this.homey.drivers.getDriver('shopping');
-
-      await suDriver.syncDevices(storageUnits, this);
-      suDriver.updateDevices(inventory);
-
-      const householdId = this.homey.settings.get('household_id');
-      await shDriver.ensureDevice(householdId);
-      shDriver.updateDevices(shopping);
+      // Update capabilities on paired devices
+      this.homey.drivers.getDriver('storage-unit').updateDevices(inventory);
+      this.homey.drivers.getDriver('shopping').updateDevices(shopping);
 
       this._checkExpiry(inventory);
       this._checkShopping(shopping);
@@ -135,7 +128,7 @@ class KitcheyApp extends Homey.App {
 
     this.homey.flow.getActionCard('add_to_shopping').registerRunListener(async (args) => {
       const api = this._requireApi();
-      const { status } = await api.addToShopping(args.name);
+      const { status } = await api.addToShopping(args.name, args.quantity ?? 1, args.unit || 'stk');
       if (status !== 200 && status !== 201) throw new Error(`API error: ${status}`);
       this._poll().catch(() => {});
     });
@@ -203,16 +196,14 @@ class KitcheyApp extends Homey.App {
     addInventoryCard.registerArgumentAutocompleteListener('product', async (query) => {
       if (!this._api) return [];
       try {
-        const { body } = await this._api.request('GET', '/api/catalog');
-        const catalog = Array.isArray(body) ? body : [];
+        const catalog = await this._api.getCatalog();
         return catalog
           .filter((p) => !query || p.name.toLowerCase().includes(query.toLowerCase()))
           .slice(0, 50)
           .map((p) => ({
             id: p.id,
             name: p.name,
-            description: p.brand || p.category || '',
-            list_type: p.category || 'pantry',
+            description: [p.brand, p.category].filter(Boolean).join(' · '),
           }));
       } catch { return []; }
     });
@@ -221,14 +212,25 @@ class KitcheyApp extends Homey.App {
       const { status } = await api.addInventoryItem(
         args.product.id,
         args.quantity ?? 1,
-        args.product.list_type || 'pantry',
-        null,
+        args.list_type,
+        args.expiry_date || null,
       );
       if (status !== 200 && status !== 201) throw new Error(`API error: ${status}`);
       this._poll().catch(() => {});
     });
 
-    // ── Creation actions (premium-gated) ──────────────────────────────────
+    // ── Creation actions ──────────────────────────────────────────────────
+
+    this.homey.flow.getActionCard('create_catalog_product').registerRunListener(async (args) => {
+      const api = this._requireApi();
+      const { status } = await api.createCatalogProduct(
+        args.name,
+        args.unit || 'stk',
+        args.category || 'pantry',
+        args.brand || null,
+      );
+      if (status !== 200 && status !== 201) throw new Error(`API error: ${status}`);
+    });
 
     this.homey.flow.getActionCard('create_storage_unit').registerRunListener(async (args) => {
       const api = this._requireApi();

@@ -7,52 +7,28 @@ class StorageUnitDriver extends Homey.Driver {
     this.log('StorageUnitDriver ready');
   }
 
-  /**
-   * Called by app.js after each poll to sync devices with current storage units.
-   * Creates devices for new units, removes devices for deleted units.
-   */
-  async syncDevices(storageUnits, app) {
-    const existing = this.getDevices();
-    const existingIds = new Set(existing.map((d) => d.getData().storage_unit_id));
-    const apiIds = new Set(storageUnits.map((u) => u.id));
+  async onPair(session) {
+    const app = this.homey.app;
 
-    // Add new
-    for (const unit of storageUnits) {
-      if (!existingIds.has(unit.id)) {
-        try {
-          await this.createDevice({
-            name: unit.name,
-            data: { storage_unit_id: unit.id },
-            settings: { storage_unit_id: unit.id, list_type: unit.list_type || '' },
-          });
-          this.log(`Created device for unit: ${unit.name}`);
-        } catch (err) {
-          this.error(`Failed to create device for unit ${unit.name}:`, err.message);
-        }
-      }
-    }
-
-    // Remove deleted
-    for (const device of existing) {
-      if (!apiIds.has(device.getData().storage_unit_id)) {
-        try {
-          await device.setUnavailable('Storage unit removed from Kitchey');
-        } catch {}
-      }
-    }
+    session.setHandler('list_devices', async () => {
+      if (!app._api) throw new Error('Kitchey is not configured — check app settings.');
+      const units = await app._api.getStorageUnits();
+      return units.map((unit) => ({
+        name: unit.name,
+        data: { storage_unit_id: unit.id },
+        settings: { storage_unit_id: unit.id, list_type: unit.list_type || '' },
+      }));
+    });
   }
 
   /**
-   * Update all storage unit devices with fresh inventory data.
+   * Update all paired storage unit devices with fresh inventory data.
    */
   updateDevices(inventory) {
     for (const device of this.getDevices()) {
       device.updateFromInventory(inventory).catch(() => {});
     }
   }
-
-  // Homey pair — no pairing UI needed (auto-managed)
-  async onPair() {}
 }
 
 module.exports = StorageUnitDriver;

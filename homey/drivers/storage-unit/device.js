@@ -8,8 +8,10 @@ class StorageUnitDevice extends Homey.Device {
   }
 
   async updateFromInventory(inventory) {
-    const unitId = this.getData().storage_unit_id;
-    const items = inventory.filter((i) => i.storage_unit_id === unitId);
+    // Items from the Kitchey API carry list_type (fridge/freezer/pantry), not storage_unit_id.
+    // Match by the list_type stored on this device.
+    const listType = this.getSettings().list_type;
+    const items = inventory.filter((i) => i.list_type === listType);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);

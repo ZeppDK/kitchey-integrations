@@ -86,7 +86,17 @@
         "small": "/assets/images/small.png",
         "large": "/assets/images/large.png"
       },
-      "pair": [],
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": { "next": "add_devices" }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
       "settings": [
         {
           "id": "storage_unit_id",
@@ -114,7 +124,17 @@
         "small": "/assets/images/small.png",
         "large": "/assets/images/large.png"
       },
-      "pair": [],
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": { "next": "add_devices" }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
       "settings": []
     }
   ],
@@ -195,6 +215,18 @@
             "type": "text",
             "name": "name",
             "title": { "en": "Item name", "da": "Varenavn" }
+          },
+          {
+            "type": "number",
+            "name": "quantity",
+            "title": { "en": "Quantity", "da": "Antal" },
+            "min": 1,
+            "step": 1
+          },
+          {
+            "type": "text",
+            "name": "unit",
+            "title": { "en": "Unit (e.g. stk, g, ml)", "da": "Enhed (fx stk, g, ml)" }
           }
         ]
       },
@@ -281,6 +313,59 @@
             "title": { "en": "Quantity", "da": "Antal" },
             "min": 1,
             "step": 1
+          },
+          {
+            "type": "dropdown",
+            "name": "list_type",
+            "title": { "en": "Storage type", "da": "Lagertype" },
+            "values": [
+              { "id": "fridge", "label": { "en": "Fridge", "da": "Køleskab" } },
+              { "id": "freezer", "label": { "en": "Freezer", "da": "Fryser" } },
+              { "id": "pantry", "label": { "en": "Pantry", "da": "Kolonial" } }
+            ]
+          },
+          {
+            "type": "date",
+            "name": "expiry_date",
+            "title": { "en": "Expiry date (optional)", "da": "Udløbsdato (valgfri)" }
+          }
+        ]
+      },
+      {
+        "id": "create_catalog_product",
+        "title": {
+          "en": "Create catalog product [[name]]",
+          "da": "Opret katalogprodukt [[name]]"
+        },
+        "titleFormatted": {
+          "en": "Create catalog product [[name]]",
+          "da": "Opret katalogprodukt [[name]]"
+        },
+        "args": [
+          {
+            "type": "text",
+            "name": "name",
+            "title": { "en": "Product name", "da": "Produktnavn" }
+          },
+          {
+            "type": "dropdown",
+            "name": "category",
+            "title": { "en": "Category", "da": "Kategori" },
+            "values": [
+              { "id": "fridge", "label": { "en": "Fridge", "da": "Køleskab" } },
+              { "id": "freezer", "label": { "en": "Freezer", "da": "Fryser" } },
+              { "id": "pantry", "label": { "en": "Pantry", "da": "Kolonial" } }
+            ]
+          },
+          {
+            "type": "text",
+            "name": "unit",
+            "title": { "en": "Unit (e.g. stk, g, ml)", "da": "Enhed (fx stk, g, ml)" }
+          },
+          {
+            "type": "text",
+            "name": "brand",
+            "title": { "en": "Brand (optional)", "da": "Mærke (valgfri)" }
           }
         ]
       },

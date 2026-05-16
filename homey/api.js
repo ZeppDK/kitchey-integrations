@@ -122,10 +122,21 @@ class KitcheyApi {
     });
   }
 
+  async getCatalog() {
+    const { body } = await this.request('GET', '/api/catalog');
+    return Array.isArray(body) ? body : [];
+  }
+
+  async createCatalogProduct(name, unit = 'stk', category = 'pantry', brand = null) {
+    const body = { name, unit, category };
+    if (brand) body.brand = brand;
+    return this.request('POST', '/api/catalog', body);
+  }
+
   // ── Shopping ────────────────────────────────────────────────────────────
 
-  async addToShopping(name) {
-    return this.request('POST', '/api/shopping', { custom_name: name, quantity: 1, unit: 'stk' });
+  async addToShopping(name, quantity = 1, unit = 'stk') {
+    return this.request('POST', '/api/shopping', { custom_name: name, quantity, unit });
   }
 
   async deleteShoppingItem(itemId) {
@@ -142,9 +153,10 @@ class KitcheyApi {
     return this.request('POST', `/api/inventory/${itemId}/use`, { amount });
   }
 
-  async addInventoryItem(productId, quantity, listType, expiryDate) {
+  async addInventoryItem(productId, quantity, listType, expiryDate = null, locationId = null) {
     const body = { product_id: productId, quantity, list_type: listType };
     if (expiryDate) body.expiry_date = expiryDate;
+    if (locationId) body.location_id = locationId;
     return this.request('POST', '/api/inventory', body);
   }
 

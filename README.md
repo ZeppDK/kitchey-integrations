@@ -139,15 +139,18 @@ homey app install
    - **Personal Access Token** (`ft_live_...`)
    - **Household ID** (shown in the Kitchey app under Settings → Advanced)
 3. Save — the app polls immediately
+4. Go to **Devices → Add device → Kitchey** to add your storage units and shopping list
 
 ### Devices
 
-Each storage unit (Fryser, Køleskab, Kolonial, etc.) appears as a device in Homey with three stats visible on its card:
+Add devices via the Homey pair wizard (Devices → Add device → Kitchey):
+
+**Storage Unit** — one device per storage unit (Fryser, Køleskab, Kolonial, etc.), with three capabilities visible on its card:
 - **Items on stock** — total item count
 - **Expiring ≤3 days** — items expiring within 3 days
 - **Expiring ≤7 days** — items expiring within 7 days
 
-A **Shopping List** device shows the count of unchecked items.
+**Shopping List** — shows the count of unchecked shopping items.
 
 Devices update every **10 minutes** and immediately after any flow action.
 
@@ -159,11 +162,12 @@ Devices update every **10 minutes** and immediately after any flow action.
 - *Shopping list has more than X items*
 
 **Actions**
-- *Add [name] to shopping list*
-- *Remove [item] from shopping list*
+- *Add [name] to shopping list* — with quantity and unit
+- *Remove [item] from shopping list* — autocomplete from unchecked items
 - *Mark [item] as found* — checks off a shopping item
 - *Mark [item] as used ([amount]×)* — decrements inventory
-- *Add [product] to inventory* — adds from catalog with quantity
+- *Add [product] to inventory* — autocomplete from catalog, choose storage type and quantity
+- *Create catalog product [name]* — name, category, unit, optional brand
 - *Create storage unit [name] ([type])* — premium required on cloud
 - *Create shelf [name] in [unit]* — premium required on cloud
 

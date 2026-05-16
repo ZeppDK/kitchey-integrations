@@ -7,23 +7,18 @@ class ShoppingDriver extends Homey.Driver {
     this.log('ShoppingDriver ready');
   }
 
-  /**
-   * Ensure exactly one ShoppingDevice exists per household.
-   * Called by app.js after first successful poll.
-   */
-  async ensureDevice(householdId) {
-    const existing = this.getDevices();
-    if (existing.length === 0) {
-      try {
-        await this.createDevice({
+  async onPair(session) {
+    const householdId = this.homey.settings.get('household_id') || 'shopping_list';
+
+    session.setHandler('list_devices', async () => {
+      // There is always exactly one shopping list per household — present it immediately.
+      return [
+        {
           name: 'Indkøbsliste',
           data: { household_id: householdId },
-        });
-        this.log('Created ShoppingDevice');
-      } catch (err) {
-        this.error('Failed to create ShoppingDevice:', err.message);
-      }
-    }
+        },
+      ];
+    });
   }
 
   updateDevices(shopping) {
@@ -32,8 +27,6 @@ class ShoppingDriver extends Homey.Driver {
       device.setCapabilityValue('measure_shopping_count', unchecked).catch(() => {});
     }
   }
-
-  async onPair() {}
 }
 
 module.exports = ShoppingDriver;
