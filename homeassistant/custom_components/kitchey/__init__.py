@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import shutil
@@ -20,6 +21,9 @@ PLATFORMS = [Platform.SENSOR]
 
 _LOVELACE_CARDS = ["kitchey-storage-card", "kitchey-shopping-card", "kitchey-catalog-card"]
 
+with open(os.path.join(os.path.dirname(__file__), "manifest.json")) as _f:
+    _VERSION = json.load(_f).get("version", "1")
+
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Copy bundled Lovelace cards to www/kitchey/ and register with frontend."""
@@ -32,8 +36,8 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
         dst = os.path.join(dst_dir, fname)
         if os.path.isfile(src):
             shutil.copy2(src, dst)
-            add_extra_js_url(hass, f"/local/kitchey/{fname}")
-            _LOGGER.debug("Registered Lovelace card: /local/kitchey/%s", fname)
+            add_extra_js_url(hass, f"/local/kitchey/{fname}?v={_VERSION}")
+            _LOGGER.debug("Registered Lovelace card: /local/kitchey/%s?v=%s", fname, _VERSION)
         else:
             _LOGGER.warning("Kitchey card not found: %s", src)
     return True

@@ -175,7 +175,9 @@ class KitcheyStorageCard extends HTMLElement {
   }
 }
 
-customElements.define('kitchey-storage-card', KitcheyStorageCard);
+if (!customElements.get('kitchey-storage-card')) {
+  customElements.define('kitchey-storage-card', KitcheyStorageCard);
+}
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'kitchey-storage-card',
