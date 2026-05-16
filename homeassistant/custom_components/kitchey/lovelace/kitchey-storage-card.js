@@ -112,19 +112,19 @@ class KitcheyStorageCard extends HTMLElement {
 
       const { primary, secondary } = formatQty(item.quantity, item.unit, item.weight_per_unit);
       const unitSize = formatUnitSize(item.unit, item.weight_per_unit);
-      const subParts = [unitSize, item.location].filter(Boolean);
-      const sub = subParts.length ? `<span class="loc">${subParts.join(' · ')}</span>` : '';
+      const loc = item.location ? `<span class="loc">${item.location}</span>` : '';
 
       return `
         <div class="row ${rowClass}">
           <div class="row-main">
             <span class="item-name">${item.name || 'Ukendt'}</span>
-            ${sub}
+            ${loc}
           </div>
           <div class="row-right">
             <div class="qty-block">
               <span class="qty-primary">${primary}</span>
               ${secondary ? `<span class="qty-secondary">${secondary}</span>` : ''}
+              ${unitSize  ? `<span class="qty-tertiary">${unitSize}/stk</span>` : ''}
             </div>
             ${expiryHtml}
           </div>
@@ -157,6 +157,7 @@ class KitcheyStorageCard extends HTMLElement {
           .qty-block      { display:flex; flex-direction:column; align-items:flex-end; }
           .qty-primary    { font-size:13px; color:var(--primary-text-color); font-weight:500; }
           .qty-secondary  { font-size:11px; color:var(--secondary-text-color); }
+          .qty-tertiary   { font-size:11px; color:var(--secondary-text-color); opacity:0.7; }
           .badge          { font-size:11px; font-weight:700; border-radius:6px; padding:2px 6px; }
           .badge.ok       { background:rgba(76,175,130,0.15); color:#4caf82; }
           .badge.warn     { background:rgba(255,152,0,0.15);  color:#ff9800; }

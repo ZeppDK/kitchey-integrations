@@ -90,8 +90,7 @@ class KitcheyCatalogCard extends HTMLElement {
       const brand = subParts.length ? `<span class="brand">${subParts.join(' · ')}</span>` : '';
       const stock = p.in_stock ?? 0;
       const stockClass = stock > 0 ? 'stock-ok' : 'stock-empty';
-      const totalStr = stock > 0 ? formatStock(stock, p.unit, p.weight_per_unit) : null;
-      const stockLabel = stock > 0 ? (totalStr || `${stock} stk`) : 'Ikke på lager';
+      const stockLabel = stock > 0 ? `${stock} stk` : 'Ikke på lager';
       const cat = CATEGORY_LABELS[p.category] || { icon: '📦' };
       return `
         <div class="prod-row">
