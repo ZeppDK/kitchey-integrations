@@ -7,9 +7,9 @@ class ShoppingDevice extends Homey.Device {
     this.log('ShoppingDevice init');
     const app = this.homey.app;
     if (app._lastShopping) {
-      await this.updateShopping(app._lastShopping).catch(() => {});
+      await this.updateShopping(app._lastShopping).catch((err) => this.error('updateShopping failed:', err.message));
     } else {
-      app._poll().catch(() => {});
+      app._poll().catch((err) => this.error('poll failed:', err.message));
     }
   }
 

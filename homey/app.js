@@ -38,10 +38,9 @@ class KitcheyApp extends Homey.App {
   async _poll() {
     if (!this._api) return;
     try {
-      const [inventory, shopping, storageUnits] = await Promise.all([
+      const [inventory, shopping] = await Promise.all([
         this._api.getInventory(),
         this._api.getShopping(),
-        this._api.getStorageUnits(),
       ]);
 
       this._lastInventory = inventory;

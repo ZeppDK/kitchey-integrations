@@ -7,9 +7,9 @@ class StorageUnitDevice extends Homey.Device {
     this.log('StorageUnitDevice init:', this.getName());
     const app = this.homey.app;
     if (app._lastInventory && app._lastInventory.length > 0) {
-      await this.updateFromInventory(app._lastInventory).catch(() => {});
+      await this.updateFromInventory(app._lastInventory).catch((err) => this.error('updateFromInventory failed:', err.message));
     } else {
-      app._poll().catch(() => {});
+      app._poll().catch((err) => this.error('poll failed:', err.message));
     }
   }
 

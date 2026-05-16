@@ -47,8 +47,12 @@ class KitcheyCoordinator(DataUpdateCoordinator):
     def is_official_server(self) -> bool:
         return OFFICIAL_SERVER in self.server_url
 
+    @property
+    def _verify_ssl(self) -> bool:
+        return self.is_official_server
+
     async def _async_update_data(self) -> dict:
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         try:
             inventory, shopping, storage_units, catalog, locations = await _gather(
                 self._fetch_json(session, f"{self.server_url}/api/inventory"),
@@ -107,7 +111,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
     # ── Shopping services ──────────────────────────────────────────────────
 
     async def async_add_to_shopping(self, name: str, quantity: int = 1, unit: str = "stk") -> None:
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         async with session.post(
             f"{self.server_url}/api/shopping",
             headers=self._headers,
@@ -118,7 +122,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         await self.async_request_refresh()
 
     async def async_delete_shopping_item(self, item_id: str) -> None:
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         async with session.delete(
             f"{self.server_url}/api/shopping/{item_id}",
             headers=self._headers,
@@ -128,7 +132,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         await self.async_request_refresh()
 
     async def async_update_shopping_item(self, item_id: str, quantity: int, unit: str) -> None:
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         async with session.put(
             f"{self.server_url}/api/shopping/{item_id}",
             headers=self._headers,
@@ -139,7 +143,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         await self.async_request_refresh()
 
     async def async_check_shopping_item(self, item_id: str, checked_by: str = "Home Assistant") -> None:
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         async with session.put(
             f"{self.server_url}/api/shopping/{item_id}",
             headers=self._headers,
@@ -152,7 +156,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
     # ── Inventory services ─────────────────────────────────────────────────
 
     async def async_use_item(self, item_id: str, amount: int = 1) -> None:
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         async with session.post(
             f"{self.server_url}/api/inventory/{item_id}/use",
             headers=self._headers,
@@ -170,7 +174,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         expiry_date: str | None,
         location_id: str | None = None,
     ) -> None:
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         payload: dict = {
             "product_id": product_id,
             "quantity": quantity,
@@ -199,7 +203,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         brand: str | None = None,
         default_location_id: str | None = None,
     ) -> None:
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         payload: dict = {"name": name, "unit": unit, "category": category}
         if brand:
             payload["brand"] = brand
@@ -220,7 +224,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         """Returns True if user is premium or on self-hosted server."""
         if not self.is_official_server:
             return True
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         async with session.get(
             f"{self.server_url}/api/premium/status",
             headers=self._auth_headers,
@@ -236,7 +240,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
                 "Premium kræves for at oprette ekstra enheder på Kitchey cloud. "
                 "Opgrader i appen, eller brug en self-hosted server."
             )
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         payload: dict = {"name": name, "list_type": list_type}
         if icon:
             payload["icon"] = icon
@@ -255,7 +259,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
                 "Premium kræves for at oprette ekstra hylder på Kitchey cloud. "
                 "Opgrader i appen, eller brug en self-hosted server."
             )
-        session = async_get_clientsession(self.hass, verify_ssl=False)
+        session = async_get_clientsession(self.hass, verify_ssl=self._verify_ssl)
         async with session.post(
             f"{self.server_url}/api/locations",
             headers=self._headers,

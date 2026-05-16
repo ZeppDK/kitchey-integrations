@@ -7,6 +7,7 @@ from homeassistant import config_entries
 from homeassistant.data_entry_flow import FlowResult
 
 from .const import DOMAIN, DEFAULT_SERVER, CONF_SERVER_URL, CONF_TOKEN, CONF_HOUSEHOLD_ID, CONF_HOUSEHOLD_NAME
+from .coordinator import OFFICIAL_SERVER
 
 
 class KitcheyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -75,7 +76,7 @@ class KitcheyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 async with session.get(
                     f"{self._server_url}/api/households",
                     headers={"Authorization": f"Bearer {self._token}"},
-                    ssl=False,
+                    ssl=(OFFICIAL_SERVER in self._server_url),
                     timeout=aiohttp.ClientTimeout(total=10),
                 ) as resp:
                     if resp.status == 401:
