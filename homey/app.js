@@ -48,13 +48,19 @@ class KitcheyApp extends Homey.App {
       this._lastShopping = shopping;
 
       // Sync devices and update capabilities
-      const suDriver = this.homey.drivers.getDriver('storage-unit');
-      const shDriver = this.homey.drivers.getDriver('shopping');
-      await suDriver.syncDevices(storageUnits);
-      suDriver.updateDevices(inventory);
-      const householdId = this.homey.settings.get('household_id');
-      await shDriver.ensureDevice(householdId);
-      shDriver.updateDevices(shopping);
+      // Drivers may not be ready on the very first poll — retry in 5s if so
+      try {
+        const suDriver = this.homey.drivers.getDriver('storage-unit');
+        const shDriver = this.homey.drivers.getDriver('shopping');
+        await suDriver.syncDevices(storageUnits);
+        suDriver.updateDevices(inventory);
+        const householdId = this.homey.settings.get('household_id');
+        await shDriver.ensureDevice(householdId);
+        shDriver.updateDevices(shopping);
+      } catch (driverErr) {
+        this.log('Drivers not ready, retrying in 5s:', driverErr.message);
+        setTimeout(() => this._poll(), 5000);
+      }
 
       this._checkExpiry(inventory);
       this._checkShopping(shopping);
