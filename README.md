@@ -7,6 +7,7 @@ Connect your [Kitchey](https://aihuset.dk/kitchey) fridge inventory to Home Assi
 - See items expiring within 3 or 7 days as sensors
 - See your shopping list item count as a sensor
 - See stock counts per storage unit as sensors
+- Browse your product catalog with stock levels and category filter
 - Add, update and remove shopping list items via automations or dashboard cards
 - Mark items as used via automations
 - Manage inventory via automations
@@ -60,9 +61,9 @@ Copy `custom_components/kitchey/` into your HA `config/custom_components/` folde
 | `sensor.kitchey_<household>_katalog` | Number of catalog products |
 | `sensor.kitchey_<household>_<unit>` | One sensor per storage unit (Fryser, Køleskab, etc.) |
 
-**Storage unit sensor attributes** include: `items` (full list with id, name, quantity, unit, expiry\_date, location\_id, location), `locations` (available shelves with id and name), `expiring_3d`, `unit_id`, `list_type`.
+**Storage unit sensor attributes** include: `items` (full list with id, name, quantity, unit, weight\_per\_unit, expiry\_date, location\_id, location), `locations` (available shelves with id and name), `expiring_3d`, `unit_id`, `list_type`.
 
-**Catalog sensor attributes** include: `products` list with id, name, unit, brand, category, in\_stock, default\_location\_id.
+**Catalog sensor attributes** include: `products` list with id, name, unit, weight\_per\_unit, brand, category, in\_stock, default\_location\_id, default\_location\_name.
 
 Sensors update every **10 minutes** and immediately after any service call.
 
@@ -84,11 +85,11 @@ Sensors update every **10 minutes** and immediately after any service call.
 
 ### Lovelace Dashboard Cards
 
-Two dashboard cards are **bundled with the integration** and load automatically — no extra installation needed.
+Three dashboard cards are **bundled with the integration** and load automatically — no extra installation needed.
 
 Add them to your dashboard via the YAML editor:
 
-**kitchey-storage-card** — shows all items in a storage unit with expiry colour badges:
+**kitchey-storage-card** — shows all items in a storage unit with quantity, total volume/weight, per-unit size, and expiry colour badges:
 ```yaml
 type: custom:kitchey-storage-card
 entity: sensor.kitchey_<household>_<unit>
@@ -100,6 +101,13 @@ max_items: 15        # optional, default 20
 ```yaml
 type: custom:kitchey-shopping-card
 entity: sensor.kitchey_<household>_indkobsliste
+```
+
+**kitchey-catalog-card** — full product catalog with stock levels, category filter (fridge/freezer/pantry), and search:
+```yaml
+type: custom:kitchey-catalog-card
+entity: sensor.kitchey_<household>_katalog
+title: Katalog       # optional
 ```
 
 > **Tip:** Find the exact entity IDs under Settings → Devices & Services → Kitchey → Entities.
