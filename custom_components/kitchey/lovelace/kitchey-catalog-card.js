@@ -162,7 +162,9 @@ class KitcheyCatalogCard extends HTMLElement {
   }
 }
 
-customElements.define('kitchey-catalog-card', KitcheyCatalogCard);
+if (!customElements.get('kitchey-catalog-card')) {
+  customElements.define('kitchey-catalog-card', KitcheyCatalogCard);
+}
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'kitchey-catalog-card',

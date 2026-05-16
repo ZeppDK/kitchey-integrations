@@ -236,7 +236,9 @@ class KitcheyShoppingCard extends HTMLElement {
   }
 }
 
-customElements.define('kitchey-shopping-card', KitcheyShoppingCard);
+if (!customElements.get('kitchey-shopping-card')) {
+  customElements.define('kitchey-shopping-card', KitcheyShoppingCard);
+}
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'kitchey-shopping-card',
