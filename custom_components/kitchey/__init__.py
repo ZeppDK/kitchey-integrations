@@ -1,16 +1,33 @@
 from __future__ import annotations
 
+import os
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
+from homeassistant.components.frontend import add_extra_js_url
 import homeassistant.helpers.config_validation as cv
 
 from .const import DOMAIN, CONF_SERVER_URL, CONF_TOKEN, CONF_HOUSEHOLD_ID
 from .coordinator import KitcheyCoordinator
 
 PLATFORMS = [Platform.SENSOR]
+
+_LOVELACE_CARDS = ["kitchey-storage-card", "kitchey-shopping-card"]
+
+
+async def async_setup(hass: HomeAssistant, config: dict) -> bool:
+    """Register bundled Lovelace cards as static resources."""
+    lovelace_dir = os.path.join(os.path.dirname(__file__), "lovelace")
+    for card in _LOVELACE_CARDS:
+        fname = f"{card}.js"
+        path = os.path.join(lovelace_dir, fname)
+        if os.path.isfile(path):
+            url = f"/kitchey/{fname}"
+            hass.http.register_static_path(url, path, cache_headers=False)
+            add_extra_js_url(hass, url)
+    return True
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:

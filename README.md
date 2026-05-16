@@ -6,8 +6,10 @@ Connect your [Kitchey](https://aihuset.dk/kitchey) fridge inventory to Home Assi
 
 - See items expiring within 3 or 7 days as sensors
 - See your shopping list item count as a sensor
-- Add items to the shopping list via automations
+- See stock counts per storage unit as sensors
+- Add, update and remove shopping list items via automations or dashboard cards
 - Mark items as used via automations
+- Manage inventory via automations
 
 ## Authentication
 
@@ -37,7 +39,7 @@ If you self-host Kitchey, enter your own URL instead (e.g. `http://192.168.1.10:
 <details>
 <summary>Manual install (without HACS)</summary>
 
-Copy `homeassistant/custom_components/kitchey/` into your HA `config/custom_components/` folder and restart.
+Copy `custom_components/kitchey/` into your HA `config/custom_components/` folder and restart.
 
 </details>
 
@@ -46,15 +48,15 @@ Copy `homeassistant/custom_components/kitchey/` into your HA `config/custom_comp
 1. Settings → Devices & Services → Add Integration → search "Kitchey"
 2. Enter server URL and PAT token
 3. Select your household
-4. Done — sensors appear immediately
+4. Done — sensors and dashboard cards are ready immediately
 
 ### Sensors
 
 | Entity | Description |
 |--------|-------------|
-| `sensor.kitchey_<household>_udløber_inden_3_dage` | Items expiring within 3 days |
-| `sensor.kitchey_<household>_udløber_inden_7_dage` | Items expiring within 7 days |
-| `sensor.kitchey_<household>_indkøbsliste` | Unchecked shopping list items |
+| `sensor.kitchey_<household>_udlober_inden_3_dage` | Items expiring within 3 days |
+| `sensor.kitchey_<household>_udlober_inden_7_dage` | Items expiring within 7 days |
+| `sensor.kitchey_<household>_indkobsliste` | Unchecked shopping list items |
 | `sensor.kitchey_<household>_<unit>` | One sensor per storage unit (Fryser, Køleskab, etc.) |
 
 Sensor attributes include the full item list (name, expiry date, quantity, location). Storage unit sensors also expose `expiring_3d` and `unit_id`.
@@ -65,10 +67,11 @@ Sensors update every **10 minutes** and immediately after any service call.
 
 | Service | Fields | Description |
 |---------|--------|-------------|
-| `kitchey.add_to_shopping` | `name` (string) | Add custom item to shopping list |
-| `kitchey.delete_shopping_item` | `item_id` (UUID string) | Remove item from shopping list |
-| `kitchey.check_shopping_item` | `item_id` (UUID string), `checked_by` (string, optional) | Mark shopping item as found |
-| `kitchey.use_item` | `item_id` (UUID string), `amount` (int, default 1) | Decrement inventory item |
+| `kitchey.add_to_shopping` | `name`, `quantity` (default 1), `unit` (default stk) | Add item to shopping list |
+| `kitchey.update_shopping_item` | `item_id` (UUID), `quantity`, `unit` (default stk) | Update quantity/unit of a shopping item |
+| `kitchey.delete_shopping_item` | `item_id` (UUID) | Remove item from shopping list |
+| `kitchey.check_shopping_item` | `item_id` (UUID), `checked_by` (optional) | Mark shopping item as found |
+| `kitchey.use_item` | `item_id` (UUID), `amount` (default 1) | Decrement inventory item |
 | `kitchey.add_inventory_item` | `product_id` (UUID), `list_type`, `quantity`, `expiry_date` (optional) | Add item to inventory |
 | `kitchey.create_storage_unit` | `name`, `list_type` (fridge/freezer/pantry), `icon` (optional) | Create new storage unit — premium required on cloud |
 | `kitchey.create_shelf` | `name`, `storage_unit_id` (UUID) | Create shelf in a storage unit — premium required on cloud |
@@ -77,21 +80,25 @@ Item and product IDs are UUIDs found in sensor attributes.
 
 ### Lovelace Dashboard Cards
 
-Two custom cards are included in `lovelace/`. Install via HACS (Frontend category) or copy the `.js` files to your `www/` folder and add as resources.
+Two dashboard cards are **bundled with the integration** and load automatically — no extra installation needed.
 
-**kitchey-storage-card** — shows all items in one storage unit with expiry colour badges:
+Add them to your dashboard via the YAML editor:
+
+**kitchey-storage-card** — shows all items in a storage unit with expiry colour badges:
 ```yaml
 type: custom:kitchey-storage-card
-entity: sensor.kitchey_hjemme_køleskab
+entity: sensor.kitchey_<household>_<unit>
 title: Køleskab      # optional
 max_items: 15        # optional, default 20
 ```
 
-**kitchey-shopping-card** — shopping list with tap-to-check and inline add:
+**kitchey-shopping-card** — shopping list with tap-to-check, inline add, and quantity edit:
 ```yaml
 type: custom:kitchey-shopping-card
-entity: sensor.kitchey_hjemme_indkøbsliste
+entity: sensor.kitchey_<household>_indkobsliste
 ```
+
+> **Tip:** Find the exact entity IDs under Settings → Devices & Services → Kitchey → Entities.
 
 ---
 
