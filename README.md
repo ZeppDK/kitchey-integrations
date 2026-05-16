@@ -27,16 +27,19 @@ If you self-host Kitchey, enter your own URL instead (e.g. `http://192.168.1.10:
 
 ## Home Assistant
 
-### Install via HACS (manual repo)
+### Install via HACS
 
 1. HACS → Integrations → ⋮ → Custom repositories
 2. Add `https://github.com/ZeppDK/kitchey-integrations` as type **Integration**
 3. Search for "Kitchey" and install
 4. Restart Home Assistant
 
-### Manual install
+<details>
+<summary>Manual install (without HACS)</summary>
 
 Copy `homeassistant/custom_components/kitchey/` into your HA `config/custom_components/` folder and restart.
+
+</details>
 
 ### Setup
 
@@ -68,7 +71,12 @@ Item IDs are found in the sensor's attribute list.
 
 ## Homey
 
-### Install
+### Install via Homey App Store
+
+Install directly from the [Homey App Store](https://homey.app/en-us/app/dk.kitchey.homey/) — no compilation needed.
+
+<details>
+<summary>Developer install (compile from source)</summary>
 
 ```bash
 cd homey
@@ -76,7 +84,7 @@ npm install
 homey app install
 ```
 
-Or submit to the Homey App Store for store distribution.
+</details>
 
 ### Setup
 
