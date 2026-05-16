@@ -10,7 +10,15 @@ class StorageUnitDriver extends Homey.Driver {
   async onPairListDevices() {
     const app = this.homey.app;
     if (!app._api) throw new Error('Kitchey is not configured — check app settings.');
-    const units = await app._api.getStorageUnits();
+    let units;
+    try {
+      units = await app._api.getStorageUnits();
+    } catch (err) {
+      throw new Error(`getStorageUnits fejlede: ${err.message}`);
+    }
+    if (!Array.isArray(units) || units.length === 0) {
+      throw new Error(`API returnerede ingen enheder (rådata: ${JSON.stringify(units)})`);
+    }
     return units.map((unit) => ({
       name: unit.name,
       data: { storage_unit_id: unit.id },
