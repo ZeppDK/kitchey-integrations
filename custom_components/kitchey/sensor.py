@@ -128,6 +128,7 @@ class KitcheyCatalogSensor(CoordinatorEntity, SensorEntity):
                     "id": p["id"],
                     "name": p.get("name"),
                     "unit": p.get("unit"),
+                    "weight_per_unit": p.get("weight_per_unit"),
                     "brand": p.get("brand"),
                     "category": p.get("category"),
                     "in_stock": p.get("in_stock", 0),
