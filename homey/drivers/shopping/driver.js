@@ -21,6 +21,7 @@ class ShoppingDriver extends Homey.Driver {
         this.log('Created ShoppingDevice');
       } catch (err) {
         this.error('Failed to create ShoppingDevice:', err.message);
+        this.homey.notifications.createNotification({ excerpt: `Kitchey: kan ikke oprette indkøbsliste — ${err.message}` }).catch(() => {});
       }
     }
   }

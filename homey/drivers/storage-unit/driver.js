@@ -27,6 +27,7 @@ class StorageUnitDriver extends Homey.Driver {
           this.log(`Created device for unit: ${unit.name}`);
         } catch (err) {
           this.error(`Failed to create device for ${unit.name}:`, err.message);
+          this.homey.notifications.createNotification({ excerpt: `Kitchey: kan ikke oprette enhed "${unit.name}" — ${err.message}` }).catch(() => {});
         }
       }
     }

@@ -60,6 +60,7 @@ class KitcheyApp extends Homey.App {
       this._checkShopping(shopping);
     } catch (err) {
       this.error('Poll failed:', err.message);
+      this.homey.notifications.createNotification({ excerpt: `Kitchey poll fejlede: ${err.message}` }).catch(() => {});
     }
   }
 
