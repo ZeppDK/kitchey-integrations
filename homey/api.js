@@ -17,7 +17,7 @@ class KitcheyApi {
     return this.serverUrl.includes(OFFICIAL_SERVER);
   }
 
-  async request(method, path, body = null, extraHeaders = {}) {
+  async request(method, path, body = null, extraHeaders = {}, _redirectCount = 0) {
     const url = new URL(this.serverUrl + path);
     const isHttps = url.protocol === 'https:';
     const transport = isHttps ? https : http;
@@ -38,6 +38,26 @@ class KitcheyApi {
 
     return new Promise((resolve, reject) => {
       const req = transport.request(options, (res) => {
+        // Follow redirects (max 5)
+        if (res.statusCode >= 301 && res.statusCode <= 308 && res.headers.location && _redirectCount < 5) {
+          const location = res.headers.location;
+          // Update serverUrl for this request only via absolute URL, or append to base
+          const redirectUrl = location.startsWith('http') ? new URL(location) : new URL(location, this.serverUrl);
+          const savedServerUrl = this.serverUrl;
+          this.serverUrl = `${redirectUrl.protocol}//${redirectUrl.host}`;
+          this.request(method, redirectUrl.pathname + redirectUrl.search, body, extraHeaders, _redirectCount + 1)
+            .then((result) => {
+              this.serverUrl = savedServerUrl;
+              resolve(result);
+            })
+            .catch((err) => {
+              this.serverUrl = savedServerUrl;
+              reject(err);
+            });
+          res.resume(); // discard body
+          return;
+        }
+
         let data = '';
         res.on('data', (chunk) => { data += chunk; });
         res.on('end', () => {

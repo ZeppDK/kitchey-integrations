@@ -29,7 +29,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icon.svg",
+      "icon": "/assets/icons/inventory.svg",
       "insights": true
     },
     "measure_expiring_3d": {
@@ -39,7 +39,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icon.svg",
+      "icon": "/assets/icons/expiry.svg",
       "insights": true
     },
     "measure_expiring_7d": {
@@ -49,18 +49,26 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icon.svg",
+      "icon": "/assets/icons/expiry.svg",
       "insights": true
     },
     "measure_shopping_count": {
       "type": "number",
-      "title": { "en": "Shopping list items", "da": "Indkøbsliste varer" },
+      "title": { "en": "Missing items", "da": "Manglende indkøb" },
       "units": { "en": "items", "da": "varer" },
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icon.svg",
+      "icon": "/assets/icons/shopping-count.svg",
       "insights": true
+    },
+    "shopping_item": {
+      "type": "string",
+      "title": { "en": "Item", "da": "Vare" },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/shopping-item.svg"
     }
   },
   "drivers": [
@@ -110,7 +118,7 @@
       "class": "other",
       "capabilities": ["measure_shopping_count"],
       "capabilitiesOptions": {
-        "measure_shopping_count": { "title": { "en": "Unchecked items", "da": "Ikke-fundne varer" } }
+        "measure_shopping_count": { "title": { "en": "Missing items", "da": "Manglende indkøb" } }
       },
       "images": {
         "small": "/assets/images/small.png",
@@ -241,6 +249,24 @@
         ]
       },
       {
+        "id": "delete_shopping_item_by_name",
+        "title": {
+          "en": "Remove [[name]] from shopping list (by name)",
+          "da": "Fjern [[name]] fra indkøbslisten (efter navn)"
+        },
+        "titleFormatted": {
+          "en": "Remove [[name]] from shopping list",
+          "da": "Fjern [[name]] fra indkøbslisten"
+        },
+        "args": [
+          {
+            "type": "text",
+            "name": "name",
+            "title": { "en": "Item name", "da": "Varenavn" }
+          }
+        ]
+      },
+      {
         "id": "check_shopping_item",
         "title": {
           "en": "Mark [[item]] as found",
@@ -255,6 +281,24 @@
             "type": "autocomplete",
             "name": "item",
             "title": { "en": "Item", "da": "Vare" }
+          }
+        ]
+      },
+      {
+        "id": "check_shopping_item_by_name",
+        "title": {
+          "en": "Mark [[name]] as found (by name)",
+          "da": "Marker [[name]] som fundet (efter navn)"
+        },
+        "titleFormatted": {
+          "en": "Mark [[name]] as found",
+          "da": "Marker [[name]] som fundet"
+        },
+        "args": [
+          {
+            "type": "text",
+            "name": "name",
+            "title": { "en": "Item name", "da": "Varenavn" }
           }
         ]
       },

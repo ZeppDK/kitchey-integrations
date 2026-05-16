@@ -18,9 +18,8 @@ class ShoppingDriver extends Homey.Driver {
   }
 
   updateDevices(shopping) {
-    const unchecked = shopping.filter((s) => !s.checked).length;
     for (const device of this.getDevices()) {
-      device.setCapabilityValue('measure_shopping_count', unchecked).catch(() => {});
+      device.updateShopping(shopping).catch(() => {});
     }
   }
 }

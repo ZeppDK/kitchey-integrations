@@ -171,6 +171,26 @@ class KitcheyApp extends Homey.App {
       this._poll().catch(() => {});
     });
 
+    this.homey.flow.getActionCard('delete_shopping_item_by_name').registerRunListener(async (args) => {
+      const api = this._requireApi();
+      const name = (args.name || '').toLowerCase().trim();
+      const item = this._lastShopping.find((i) => !i.checked && (i.product_name || i.custom_name || '').toLowerCase() === name);
+      if (!item) throw new Error(`Vare ikke fundet på indkøbslisten: ${args.name}`);
+      const { status } = await api.deleteShoppingItem(item.id);
+      if (status !== 200 && status !== 204) throw new Error(`API error: ${status}`);
+      this._poll().catch(() => {});
+    });
+
+    this.homey.flow.getActionCard('check_shopping_item_by_name').registerRunListener(async (args) => {
+      const api = this._requireApi();
+      const name = (args.name || '').toLowerCase().trim();
+      const item = this._lastShopping.find((i) => !i.checked && (i.product_name || i.custom_name || '').toLowerCase() === name);
+      if (!item) throw new Error(`Vare ikke fundet på indkøbslisten: ${args.name}`);
+      const { status } = await api.checkShoppingItem(item.id, 'Homey');
+      if (status !== 200) throw new Error(`API error: ${status}`);
+      this._poll().catch(() => {});
+    });
+
     // ── Inventory actions ─────────────────────────────────────────────────
 
     const useItemCard = this.homey.flow.getActionCard('use_item');

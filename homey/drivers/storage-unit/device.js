@@ -5,6 +5,12 @@ const Homey = require('homey');
 class StorageUnitDevice extends Homey.Device {
   async onInit() {
     this.log('StorageUnitDevice init:', this.getName());
+    const app = this.homey.app;
+    if (app._lastInventory && app._lastInventory.length > 0) {
+      await this.updateFromInventory(app._lastInventory).catch(() => {});
+    } else {
+      app._poll().catch(() => {});
+    }
   }
 
   async updateFromInventory(inventory) {
