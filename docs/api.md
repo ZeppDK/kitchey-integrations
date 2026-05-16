@@ -1,6 +1,6 @@
 # Kitchey REST API
 
-Base URL: `https://freshtrack.aihuset.dk` (or your self-hosted instance)
+Base URL: `https://kitchey.aihuset.dk` (or your self-hosted instance)
 
 ## Authentication
 
