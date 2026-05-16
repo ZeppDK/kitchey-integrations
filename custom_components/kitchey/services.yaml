@@ -9,6 +9,25 @@ add_to_shopping:
       example: "Mælk"
       selector:
         text:
+    quantity:
+      name: Quantity
+      description: How many units to add (default 1).
+      required: false
+      default: 1
+      example: 2
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+    unit:
+      name: Unit
+      description: Unit of measurement (default stk).
+      required: false
+      default: "stk"
+      example: "liter"
+      selector:
+        text:
 
 delete_shopping_item:
   name: Delete shopping item

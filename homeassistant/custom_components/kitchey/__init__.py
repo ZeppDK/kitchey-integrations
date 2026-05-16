@@ -58,7 +58,11 @@ def _register_services(hass: HomeAssistant) -> None:
         c = _first_coordinator()
         if c is None:
             raise Exception("No Kitchey integration configured")
-        await c.async_add_to_shopping(call.data["name"])
+        await c.async_add_to_shopping(
+            call.data["name"],
+            call.data.get("quantity", 1),
+            call.data.get("unit", "stk"),
+        )
 
     async def handle_delete_shopping_item(call: ServiceCall) -> None:
         c = _first_coordinator()
@@ -111,7 +115,11 @@ def _register_services(hass: HomeAssistant) -> None:
     hass.services.async_register(
         DOMAIN, "add_to_shopping",
         handle_add_to_shopping,
-        schema=vol.Schema({vol.Required("name"): cv.string}),
+        schema=vol.Schema({
+            vol.Required("name"): cv.string,
+            vol.Optional("quantity", default=1): cv.positive_int,
+            vol.Optional("unit", default="stk"): cv.string,
+        }),
     )
     hass.services.async_register(
         DOMAIN, "delete_shopping_item",

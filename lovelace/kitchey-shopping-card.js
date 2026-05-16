@@ -52,12 +52,18 @@ class KitcheyShoppingCard extends HTMLElement {
   }
 
   _addItem() {
-    const input = this.querySelector('#kitchey-add-input');
-    if (!input) return;
-    const name = input.value.trim();
+    const nameInput = this.querySelector('#kitchey-add-input');
+    const qtyInput  = this.querySelector('#kitchey-add-qty');
+    const unitInput = this.querySelector('#kitchey-add-unit');
+    if (!nameInput) return;
+    const name = nameInput.value.trim();
     if (!name) return;
-    this._callService('kitchey', 'add_to_shopping', { name });
-    input.value = '';
+    const quantity = parseInt(qtyInput?.value) || 1;
+    const unit = unitInput?.value.trim() || 'stk';
+    this._callService('kitchey', 'add_to_shopping', { name, quantity, unit });
+    nameInput.value = '';
+    if (qtyInput) qtyInput.value = '1';
+    if (unitInput) unitInput.value = 'stk';
   }
 
   _render() {
@@ -102,9 +108,14 @@ class KitcheyShoppingCard extends HTMLElement {
           .check-btn    { color:var(--secondary-text-color); flex-shrink:0; display:flex; align-items:center; }
           .shop-name    { flex:1; font-size:14px; color:var(--primary-text-color); min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
           .shop-qty     { font-size:13px; color:var(--secondary-text-color); flex-shrink:0; }
-          .add-row      { display:flex; gap:8px; padding:8px 16px 12px; }
+          .add-row      { display:flex; gap:8px; padding:8px 16px 4px; }
+          .add-row2     { display:flex; gap:8px; padding:4px 16px 12px; }
           .add-input    { flex:1; padding:8px 12px; border:1px solid var(--divider-color); border-radius:8px; background:var(--card-background-color); color:var(--primary-text-color); font-size:14px; outline:none; }
           .add-input:focus { border-color:var(--primary-color); }
+          .add-qty      { width:64px; padding:8px 8px; border:1px solid var(--divider-color); border-radius:8px; background:var(--card-background-color); color:var(--primary-text-color); font-size:14px; outline:none; text-align:center; }
+          .add-qty:focus { border-color:var(--primary-color); }
+          .add-unit     { width:72px; padding:8px 8px; border:1px solid var(--divider-color); border-radius:8px; background:var(--card-background-color); color:var(--primary-text-color); font-size:14px; outline:none; }
+          .add-unit:focus { border-color:var(--primary-color); }
           .add-btn      { padding:8px 14px; background:var(--primary-color); color:var(--text-primary-color); border:none; border-radius:8px; font-size:18px; font-weight:700; cursor:pointer; }
           .empty        { padding:12px 16px; color:var(--secondary-text-color); font-size:13px; text-align:center; }
         </style>
@@ -115,6 +126,10 @@ class KitcheyShoppingCard extends HTMLElement {
         <div class="item-list">${rows}${empty}</div>
         <div class="add-row">
           <input id="kitchey-add-input" class="add-input" placeholder="Tilføj vare…" />
+        </div>
+        <div class="add-row2">
+          <input id="kitchey-add-qty"  class="add-qty"   type="number" min="1" value="1" placeholder="Antal" />
+          <input id="kitchey-add-unit" class="add-unit"  type="text"   value="stk" placeholder="Enhed" />
           <button class="add-btn" id="kitchey-add-btn">+</button>
         </div>
       </ha-card>`;

@@ -106,12 +106,12 @@ class KitcheyCoordinator(DataUpdateCoordinator):
 
     # ── Shopping services ──────────────────────────────────────────────────
 
-    async def async_add_to_shopping(self, name: str) -> None:
+    async def async_add_to_shopping(self, name: str, quantity: int = 1, unit: str = "stk") -> None:
         session = async_get_clientsession(self.hass, verify_ssl=False)
         async with session.post(
             f"{self.server_url}/api/shopping",
             headers=self._headers,
-            json={"custom_name": name, "quantity": 1, "unit": "stk"},
+            json={"custom_name": name, "quantity": quantity, "unit": unit},
         ) as resp:
             if resp.status not in (200, 201):
                 raise Exception(f"add_to_shopping failed: {resp.status}")
