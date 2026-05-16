@@ -29,7 +29,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icons/package.svg",
+      "icon": "/assets/icon.svg",
       "insights": true
     },
     "measure_expiring_3d": {
@@ -39,7 +39,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icons/expiry.svg",
+      "icon": "/assets/icon.svg",
       "insights": true
     },
     "measure_expiring_7d": {
@@ -49,7 +49,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icons/expiry.svg",
+      "icon": "/assets/icon.svg",
       "insights": true
     },
     "measure_shopping_count": {
@@ -59,7 +59,7 @@
       "getable": true,
       "setable": false,
       "uiComponent": "sensor",
-      "icon": "/assets/icons/cart.svg",
+      "icon": "/assets/icon.svg",
       "insights": true
     }
   },
