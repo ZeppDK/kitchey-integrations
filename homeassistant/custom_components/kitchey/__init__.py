@@ -10,6 +10,8 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant, ServiceCall
 from homeassistant.components.frontend import add_extra_js_url
+from homeassistant.components import panel_custom
+from homeassistant.components.http import HomeAssistantView
 import homeassistant.helpers.config_validation as cv
 
 from .const import DOMAIN, CONF_SERVER_URL, CONF_TOKEN, CONF_HOUSEHOLD_ID
@@ -25,14 +27,38 @@ with open(os.path.join(os.path.dirname(__file__), "manifest.json")) as _f:
     _VERSION = json.load(_f).get("version", "1")
 
 
+class KitcheyConfigView(HomeAssistantView):
+    """Expose Kitchey credentials to the sidebar panel (HA-auth required)."""
+
+    url = "/api/kitchey/config"
+    name = "api:kitchey:config"
+    requires_auth = True
+
+    async def get(self, request):  # noqa: D102
+        hass = request.app["hass"]
+        entries = hass.data.get(DOMAIN, {})
+        coordinator = next(iter(entries.values()), None)
+        if coordinator is None:
+            return self.json_message("Kitchey not configured", status_code=404)
+        return self.json({
+            "server_url":        coordinator.server_url,
+            "token":             coordinator.token,
+            "household_id":      coordinator.household_id,
+            "is_official_server": coordinator.is_official_server,
+        })
+
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Copy bundled Lovelace cards to www/kitchey/ and register with frontend."""
-    src_dir = os.path.join(os.path.dirname(__file__), "lovelace")
-    dst_dir = hass.config.path("www", "kitchey")
+    """Copy bundled JS files to www/kitchey/, register Lovelace cards and the sidebar panel."""
+    src_lovelace = os.path.join(os.path.dirname(__file__), "lovelace")
+    src_panel    = os.path.join(os.path.dirname(__file__), "panel", "kitchey-panel.js")
+    dst_dir      = hass.config.path("www", "kitchey")
     os.makedirs(dst_dir, exist_ok=True)
+
+    # Lovelace cards
     for card in _LOVELACE_CARDS:
         fname = f"{card}.js"
-        src = os.path.join(src_dir, fname)
+        src = os.path.join(src_lovelace, fname)
         dst = os.path.join(dst_dir, fname)
         if os.path.isfile(src):
             shutil.copy2(src, dst)
@@ -40,6 +66,26 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             _LOGGER.debug("Registered Lovelace card: /local/kitchey/%s?v=%s", fname, _VERSION)
         else:
             _LOGGER.warning("Kitchey card not found: %s", src)
+
+    # Sidebar panel
+    if os.path.isfile(src_panel):
+        shutil.copy2(src_panel, os.path.join(dst_dir, "kitchey-panel.js"))
+        await panel_custom.async_register_panel(
+            hass,
+            webcomponent_name="kitchey-panel",
+            frontend_url_path="kitchey",
+            sidebar_title="Kitchey",
+            sidebar_icon="mdi:fridge-outline",
+            module_url=f"/local/kitchey/kitchey-panel.js?v={_VERSION}",
+            require_admin=False,
+        )
+        _LOGGER.debug("Registered Kitchey sidebar panel")
+    else:
+        _LOGGER.warning("Kitchey panel JS not found: %s", src_panel)
+
+    # Config endpoint for the panel
+    hass.http.register_view(KitcheyConfigView())
+
     return True
 
 
