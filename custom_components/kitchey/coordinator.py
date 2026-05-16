@@ -50,13 +50,29 @@ class KitcheyCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         session = async_get_clientsession(self.hass, verify_ssl=False)
         try:
-            inventory, shopping, storage_units = await _gather(
+            inventory, shopping, storage_units, locations = await _gather(
                 self._fetch_json(session, f"{self.server_url}/api/inventory"),
                 self._fetch_json(session, f"{self.server_url}/api/shopping"),
                 self._fetch_json(session, f"{self.server_url}/api/storage-units"),
+                self._fetch_json(session, f"{self.server_url}/api/locations"),
             )
         except Exception as err:
             raise UpdateFailed(f"Kitchey API error: {err}") from err
+
+        # Build location_id → storage_unit_id mapping
+        loc_to_unit: dict[str, str] = {
+            loc["id"]: loc["storage_unit_id"]
+            for loc in locations
+            if loc.get("storage_unit_id")
+        }
+
+        # Enrich inventory items with storage_unit_id
+        for item in inventory:
+            loc_id = item.get("location_id")
+            if loc_id and loc_id in loc_to_unit:
+                item["storage_unit_id"] = loc_to_unit[loc_id]
+            else:
+                item.setdefault("storage_unit_id", None)
 
         today = date.today()
 
@@ -72,19 +88,12 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         expiring_3d = [i for i in inventory if (d := days_until(i)) is not None and 0 <= d <= 3]
         expiring_7d = [i for i in inventory if (d := days_until(i)) is not None and 0 <= d <= 7]
 
-        # Group inventory by storage unit id
-        by_unit: dict[str, list] = {}
-        for item in inventory:
-            uid = item.get("storage_unit_id") or item.get("list_type", "unknown")
-            by_unit.setdefault(uid, []).append(item)
-
         return {
             "inventory": inventory,
             "expiring_3d": expiring_3d,
             "expiring_7d": expiring_7d,
             "shopping": [s for s in shopping if not s.get("checked")],
             "storage_units": storage_units,
-            "inventory_by_unit": by_unit,
         }
 
     async def _fetch_json(self, session, url: str) -> list:
