@@ -50,29 +50,25 @@ class KitcheyCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         session = async_get_clientsession(self.hass, verify_ssl=False)
         try:
-            inventory, shopping, storage_units, locations = await _gather(
+            inventory, shopping, storage_units = await _gather(
                 self._fetch_json(session, f"{self.server_url}/api/inventory"),
                 self._fetch_json(session, f"{self.server_url}/api/shopping"),
                 self._fetch_json(session, f"{self.server_url}/api/storage-units"),
-                self._fetch_json(session, f"{self.server_url}/api/locations"),
             )
         except Exception as err:
             raise UpdateFailed(f"Kitchey API error: {err}") from err
 
-        # Build location_id → storage_unit_id mapping
-        loc_to_unit: dict[str, str] = {
-            loc["id"]: loc["storage_unit_id"]
-            for loc in locations
-            if loc.get("storage_unit_id")
+        # Map list_type → storage_unit_id (fridge/freezer/pantry → unit UUID)
+        type_to_unit: dict[str, str] = {
+            unit["list_type"]: unit["id"]
+            for unit in storage_units
+            if unit.get("list_type")
         }
 
-        # Enrich inventory items with storage_unit_id
+        # Assign storage_unit_id to each inventory item based on its list_type
         for item in inventory:
-            loc_id = item.get("location_id")
-            if loc_id and loc_id in loc_to_unit:
-                item["storage_unit_id"] = loc_to_unit[loc_id]
-            else:
-                item.setdefault("storage_unit_id", None)
+            list_type = item.get("list_type")
+            item["storage_unit_id"] = type_to_unit.get(list_type)
 
         today = date.today()
 
