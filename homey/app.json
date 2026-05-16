@@ -30,9 +30,7 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/icons/package.svg",
-      "insights": true,
-      "insightsTitleTrue": null,
-      "insightsTitleFalse": null
+      "insights": true
     },
     "measure_expiring_3d": {
       "type": "number",
@@ -42,9 +40,7 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/icons/expiry.svg",
-      "insights": true,
-      "insightsTitleTrue": null,
-      "insightsTitleFalse": null
+      "insights": true
     },
     "measure_expiring_7d": {
       "type": "number",
@@ -54,9 +50,7 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/icons/expiry.svg",
-      "insights": true,
-      "insightsTitleTrue": null,
-      "insightsTitleFalse": null
+      "insights": true
     },
     "measure_shopping_count": {
       "type": "number",
@@ -66,9 +60,7 @@
       "setable": false,
       "uiComponent": "sensor",
       "icon": "/assets/icons/cart.svg",
-      "insights": true,
-      "insightsTitleTrue": null,
-      "insightsTitleFalse": null
+      "insights": true
     }
   },
   "drivers": [
