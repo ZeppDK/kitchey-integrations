@@ -10,26 +10,138 @@ add_to_shopping:
       selector:
         text:
 
+delete_shopping_item:
+  name: Delete shopping item
+  description: Removes an item from the Kitchey shopping list.
+  fields:
+    item_id:
+      name: Item ID
+      description: UUID of the shopping item (found in sensor attributes).
+      required: true
+      example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      selector:
+        text:
+
+check_shopping_item:
+  name: Check shopping item
+  description: Marks a shopping item as found/checked.
+  fields:
+    item_id:
+      name: Item ID
+      description: UUID of the shopping item (found in sensor attributes).
+      required: true
+      example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      selector:
+        text:
+    checked_by:
+      name: Checked by
+      description: Name shown as "found by".
+      required: false
+      default: "Home Assistant"
+      example: "Automation"
+      selector:
+        text:
+
 use_item:
   name: Use item
   description: Decrements an inventory item's quantity by the given amount.
   fields:
     item_id:
       name: Item ID
-      description: The numeric ID of the inventory item (found in sensor attributes).
+      description: UUID of the inventory item (found in sensor attributes).
       required: true
-      example: 42
+      example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
       selector:
-        number:
-          min: 1
-          mode: box
+        text:
     amount:
       name: Amount
       description: How many units to deduct (default 1).
       required: false
-      example: 1
       default: 1
+      example: 1
       selector:
         number:
           min: 1
           mode: box
+
+add_inventory_item:
+  name: Add inventory item
+  description: Adds a catalog product to the inventory.
+  fields:
+    product_id:
+      name: Product ID
+      description: UUID of the catalog product.
+      required: true
+      example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      selector:
+        text:
+    list_type:
+      name: List type
+      required: true
+      example: "fridge"
+      selector:
+        select:
+          options:
+            - fridge
+            - freezer
+            - pantry
+    quantity:
+      name: Quantity
+      required: false
+      default: 1
+      selector:
+        number:
+          min: 1
+          max: 999
+          mode: box
+    expiry_date:
+      name: Expiry date
+      description: "Format: YYYY-MM-DD"
+      required: false
+      example: "2026-06-01"
+      selector:
+        text:
+
+create_storage_unit:
+  name: Create storage unit
+  description: Creates a new storage unit. Requires premium on Kitchey cloud.
+  fields:
+    name:
+      name: Name
+      required: true
+      example: "Extra fridge"
+      selector:
+        text:
+    list_type:
+      name: List type
+      required: true
+      selector:
+        select:
+          options:
+            - fridge
+            - freezer
+            - pantry
+    icon:
+      name: Icon
+      required: false
+      example: "🧊"
+      selector:
+        text:
+
+create_shelf:
+  name: Create shelf
+  description: Creates a shelf inside a storage unit. Requires premium on Kitchey cloud.
+  fields:
+    name:
+      name: Name
+      required: true
+      example: "Top shelf"
+      selector:
+        text:
+    storage_unit_id:
+      name: Storage unit ID
+      description: UUID of the storage unit (found in sensor attributes).
+      required: true
+      example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      selector:
+        text:
