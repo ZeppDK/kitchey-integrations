@@ -18,14 +18,13 @@ async def async_setup_entry(
     coordinator: KitcheyCoordinator = hass.data[DOMAIN][entry.entry_id]
     household = entry.data[CONF_HOUSEHOLD_NAME]
 
-    # Static sensors always present
     entities: list[SensorEntity] = [
         KitcheyExpiringSensor(coordinator, entry, household, days=3),
         KitcheyExpiringSensor(coordinator, entry, household, days=7),
         KitcheyShoppingSensor(coordinator, entry, household),
+        KitcheyCatalogSensor(coordinator, entry, household),
     ]
 
-    # Dynamic per-storage-unit sensors (one per unit returned by API)
     known_unit_ids: set[str] = set()
     for unit in coordinator.data.get("storage_units", []):
         sensor = KitcheyStorageUnitSensor(coordinator, entry, household, unit)
@@ -34,7 +33,6 @@ async def async_setup_entry(
 
     async_add_entities(entities)
 
-    # Re-create unit sensors if storage units change after initial load
     def _add_new_unit_sensors() -> None:
         new_entities = []
         for unit in coordinator.data.get("storage_units", []):
@@ -108,6 +106,39 @@ class KitcheyShoppingSensor(CoordinatorEntity, SensorEntity):
         }
 
 
+class KitcheyCatalogSensor(CoordinatorEntity, SensorEntity):
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "products"
+    _attr_icon = "mdi:book-open-variant"
+
+    def __init__(self, coordinator: KitcheyCoordinator, entry: ConfigEntry, household: str) -> None:
+        super().__init__(coordinator)
+        self._attr_unique_id = f"{entry.entry_id}_catalog"
+        self._attr_name = f"Kitchey {household} katalog"
+
+    @property
+    def native_value(self) -> int:
+        return len(self.coordinator.data.get("catalog", []))
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        return {
+            "products": [
+                {
+                    "id": p["id"],
+                    "name": p.get("name"),
+                    "unit": p.get("unit"),
+                    "brand": p.get("brand"),
+                    "category": p.get("category"),
+                    "in_stock": p.get("in_stock", 0),
+                    "default_location_id": p.get("default_location_id"),
+                    "default_location_name": p.get("default_location_name"),
+                }
+                for p in self.coordinator.data.get("catalog", [])
+            ]
+        }
+
+
 class KitcheyStorageUnitSensor(CoordinatorEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
     _attr_native_unit_of_measurement = "items"
@@ -135,12 +166,19 @@ class KitcheyStorageUnitSensor(CoordinatorEntity, SensorEntity):
 
     @property
     def native_value(self) -> int:
-        items = self._get_items()
-        return len(items)
+        return len(self._get_items())
 
     def _get_items(self) -> list:
         inventory = self.coordinator.data.get("inventory", [])
         return [i for i in inventory if i.get("storage_unit_id") == self._unit_id]
+
+    def _get_locations(self) -> list:
+        locations = self.coordinator.data.get("locations", [])
+        return [
+            {"id": loc["id"], "name": loc["name"]}
+            for loc in locations
+            if loc.get("storage_unit_id") == self._unit_id
+        ]
 
     @property
     def extra_state_attributes(self) -> dict:
@@ -158,6 +196,7 @@ class KitcheyStorageUnitSensor(CoordinatorEntity, SensorEntity):
             "unit_id": self._unit_id,
             "list_type": self._list_type,
             "expiring_3d": expiring_3,
+            "locations": self._get_locations(),
             "items": [
                 {
                     "id": i["id"],
@@ -165,6 +204,7 @@ class KitcheyStorageUnitSensor(CoordinatorEntity, SensorEntity):
                     "quantity": i.get("quantity"),
                     "unit": i.get("unit"),
                     "expiry_date": i.get("expiry_date", "")[:10] if i.get("expiry_date") else None,
+                    "location_id": i.get("location_id"),
                     "location": i.get("location_name"),
                 }
                 for i in items

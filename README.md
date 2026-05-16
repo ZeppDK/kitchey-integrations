@@ -57,9 +57,12 @@ Copy `custom_components/kitchey/` into your HA `config/custom_components/` folde
 | `sensor.kitchey_<household>_udlober_inden_3_dage` | Items expiring within 3 days |
 | `sensor.kitchey_<household>_udlober_inden_7_dage` | Items expiring within 7 days |
 | `sensor.kitchey_<household>_indkobsliste` | Unchecked shopping list items |
+| `sensor.kitchey_<household>_katalog` | Number of catalog products |
 | `sensor.kitchey_<household>_<unit>` | One sensor per storage unit (Fryser, Køleskab, etc.) |
 
-Sensor attributes include the full item list (name, expiry date, quantity, location). Storage unit sensors also expose `expiring_3d` and `unit_id`.
+**Storage unit sensor attributes** include: `items` (full list with id, name, quantity, unit, expiry\_date, location\_id, location), `locations` (available shelves with id and name), `expiring_3d`, `unit_id`, `list_type`.
+
+**Catalog sensor attributes** include: `products` list with id, name, unit, brand, category, in\_stock, default\_location\_id.
 
 Sensors update every **10 minutes** and immediately after any service call.
 
@@ -72,11 +75,12 @@ Sensors update every **10 minutes** and immediately after any service call.
 | `kitchey.delete_shopping_item` | `item_id` (UUID) | Remove item from shopping list |
 | `kitchey.check_shopping_item` | `item_id` (UUID), `checked_by` (optional) | Mark shopping item as found |
 | `kitchey.use_item` | `item_id` (UUID), `amount` (default 1) | Decrement inventory item |
-| `kitchey.add_inventory_item` | `product_id` (UUID), `list_type`, `quantity`, `expiry_date` (optional) | Add item to inventory |
+| `kitchey.add_inventory_item` | `product_id` (UUID), `list_type`, `quantity`, `expiry_date` (optional), `location_id` (optional) | Add catalog product to inventory, optionally on a specific shelf |
+| `kitchey.create_catalog_product` | `name`, `unit` (default stk), `category`, `brand` (optional), `default_location_id` (optional) | Create new product in catalog |
 | `kitchey.create_storage_unit` | `name`, `list_type` (fridge/freezer/pantry), `icon` (optional) | Create new storage unit — premium required on cloud |
 | `kitchey.create_shelf` | `name`, `storage_unit_id` (UUID) | Create shelf in a storage unit — premium required on cloud |
 
-Item and product IDs are UUIDs found in sensor attributes.
+> **Finding IDs:** Product IDs are in the catalog sensor's `products` attribute. Location (shelf) IDs are in each storage unit sensor's `locations` attribute. Item IDs are in the `items` attribute of each sensor.
 
 ### Lovelace Dashboard Cards
 

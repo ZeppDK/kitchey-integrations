@@ -69,6 +69,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             "check_shopping_item",
             "use_item",
             "add_inventory_item",
+            "create_catalog_product",
             "create_storage_unit",
             "create_shelf",
         ):
@@ -131,6 +132,19 @@ def _register_services(hass: HomeAssistant) -> None:
             call.data.get("quantity", 1),
             call.data["list_type"],
             call.data.get("expiry_date"),
+            call.data.get("location_id"),
+        )
+
+    async def handle_create_catalog_product(call: ServiceCall) -> None:
+        c = _first_coordinator()
+        if c is None:
+            raise Exception("No Kitchey integration configured")
+        await c.async_create_catalog_product(
+            call.data["name"],
+            call.data.get("unit", "stk"),
+            call.data.get("category", "pantry"),
+            call.data.get("brand"),
+            call.data.get("default_location_id"),
         )
 
     async def handle_create_storage_unit(call: ServiceCall) -> None:
@@ -196,6 +210,18 @@ def _register_services(hass: HomeAssistant) -> None:
             vol.Optional("quantity", default=1): cv.positive_int,
             vol.Required("list_type"): vol.In(["fridge", "freezer", "pantry"]),
             vol.Optional("expiry_date"): cv.string,
+            vol.Optional("location_id"): cv.string,
+        }),
+    )
+    hass.services.async_register(
+        DOMAIN, "create_catalog_product",
+        handle_create_catalog_product,
+        schema=vol.Schema({
+            vol.Required("name"): cv.string,
+            vol.Optional("unit", default="stk"): cv.string,
+            vol.Optional("category", default="pantry"): vol.In(["fridge", "freezer", "pantry"]),
+            vol.Optional("brand"): cv.string,
+            vol.Optional("default_location_id"): cv.string,
         }),
     )
     hass.services.async_register(

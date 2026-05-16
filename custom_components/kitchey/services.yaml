@@ -148,6 +148,54 @@ add_inventory_item:
       example: "2026-06-01"
       selector:
         text:
+    location_id:
+      name: Location (shelf) ID
+      description: UUID of the shelf to place the item on (found in storage unit sensor attributes under locations).
+      required: false
+      example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      selector:
+        text:
+
+create_catalog_product:
+  name: Create catalog product
+  description: Creates a new product in the household catalog.
+  fields:
+    name:
+      name: Name
+      required: true
+      example: "Havregryn"
+      selector:
+        text:
+    unit:
+      name: Unit
+      required: false
+      default: "stk"
+      example: "g"
+      selector:
+        text:
+    category:
+      name: Category
+      required: false
+      default: "pantry"
+      selector:
+        select:
+          options:
+            - fridge
+            - freezer
+            - pantry
+    brand:
+      name: Brand
+      required: false
+      example: "Änglamark"
+      selector:
+        text:
+    default_location_id:
+      name: Default location (shelf) ID
+      description: UUID of the default shelf for this product (found in storage unit sensor attributes).
+      required: false
+      example: "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+      selector:
+        text:
 
 create_storage_unit:
   name: Create storage unit

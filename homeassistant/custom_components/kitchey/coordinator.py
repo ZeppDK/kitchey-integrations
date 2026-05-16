@@ -50,10 +50,12 @@ class KitcheyCoordinator(DataUpdateCoordinator):
     async def _async_update_data(self) -> dict:
         session = async_get_clientsession(self.hass, verify_ssl=False)
         try:
-            inventory, shopping, storage_units = await _gather(
+            inventory, shopping, storage_units, catalog, locations = await _gather(
                 self._fetch_json(session, f"{self.server_url}/api/inventory"),
                 self._fetch_json(session, f"{self.server_url}/api/shopping"),
                 self._fetch_json(session, f"{self.server_url}/api/storage-units"),
+                self._fetch_json(session, f"{self.server_url}/api/catalog"),
+                self._fetch_json(session, f"{self.server_url}/api/locations"),
             )
         except Exception as err:
             raise UpdateFailed(f"Kitchey API error: {err}") from err
@@ -90,6 +92,8 @@ class KitcheyCoordinator(DataUpdateCoordinator):
             "expiring_7d": expiring_7d,
             "shopping": [s for s in shopping if not s.get("checked")],
             "storage_units": storage_units,
+            "catalog": catalog,
+            "locations": locations,
         }
 
     async def _fetch_json(self, session, url: str) -> list:
@@ -164,6 +168,7 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         quantity: int,
         list_type: str,
         expiry_date: str | None,
+        location_id: str | None = None,
     ) -> None:
         session = async_get_clientsession(self.hass, verify_ssl=False)
         payload: dict = {
@@ -173,6 +178,8 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         }
         if expiry_date:
             payload["expiry_date"] = expiry_date
+        if location_id:
+            payload["location_id"] = location_id
         async with session.post(
             f"{self.server_url}/api/inventory",
             headers=self._headers,
@@ -180,6 +187,31 @@ class KitcheyCoordinator(DataUpdateCoordinator):
         ) as resp:
             if resp.status not in (200, 201):
                 raise Exception(f"add_inventory_item failed: {resp.status}")
+        await self.async_request_refresh()
+
+    # ── Catalog services ───────────────────────────────────────────────────
+
+    async def async_create_catalog_product(
+        self,
+        name: str,
+        unit: str = "stk",
+        category: str = "pantry",
+        brand: str | None = None,
+        default_location_id: str | None = None,
+    ) -> None:
+        session = async_get_clientsession(self.hass, verify_ssl=False)
+        payload: dict = {"name": name, "unit": unit, "category": category}
+        if brand:
+            payload["brand"] = brand
+        if default_location_id:
+            payload["default_location_id"] = default_location_id
+        async with session.post(
+            f"{self.server_url}/api/catalog",
+            headers=self._headers,
+            json=payload,
+        ) as resp:
+            if resp.status not in (200, 201):
+                raise Exception(f"create_catalog_product failed: {resp.status}")
         await self.async_request_refresh()
 
     # ── Creation services (premium-gated) ──────────────────────────────────
