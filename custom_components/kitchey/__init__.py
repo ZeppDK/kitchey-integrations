@@ -18,7 +18,7 @@ _LOGGER = logging.getLogger(__name__)
 
 PLATFORMS = [Platform.SENSOR]
 
-_LOVELACE_CARDS = ["kitchey-storage-card", "kitchey-shopping-card"]
+_LOVELACE_CARDS = ["kitchey-storage-card", "kitchey-shopping-card", "kitchey-catalog-card"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
