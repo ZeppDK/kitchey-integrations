@@ -203,6 +203,7 @@ class KitcheyStorageUnitSensor(CoordinatorEntity, SensorEntity):
                     "name": i.get("name"),
                     "quantity": i.get("quantity"),
                     "unit": i.get("unit"),
+                    "weight_per_unit": i.get("weight_per_unit"),
                     "expiry_date": i.get("expiry_date", "")[:10] if i.get("expiry_date") else None,
                     "location_id": i.get("location_id"),
                     "location": i.get("location_name"),

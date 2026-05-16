@@ -9,6 +9,17 @@
  *   title: Katalog    # optional
  */
 
+function formatStock(inStock, unit, weightPerUnit) {
+  if (!inStock) return null;
+  if (!weightPerUnit || !unit || unit === 'stk' || unit === 'pcs') return `${inStock} stk`;
+  const total = inStock * weightPerUnit;
+  if (unit === 'ml') return total >= 1000 ? `${+(total/1000).toFixed(2).replace(/\.?0+$/,'')} L` : `${total} ml`;
+  if (unit === 'l')  return `${+total.toFixed(2).replace(/\.?0+$/,'')} L`;
+  if (unit === 'g')  return total >= 1000 ? `${+(total/1000).toFixed(2).replace(/\.?0+$/,'')} kg` : `${total} g`;
+  if (unit === 'kg') return `${+total.toFixed(2).replace(/\.?0+$/,'')} kg`;
+  return `${inStock} ${unit}`;
+}
+
 const CATEGORY_LABELS = {
   fridge:  { label: 'Køleskab', icon: '🧊' },
   freezer: { label: 'Fryser',   icon: '❄️' },
@@ -68,7 +79,8 @@ class KitcheyCatalogCard extends HTMLElement {
       const brand = p.brand ? `<span class="brand">${p.brand}</span>` : '';
       const stock = p.in_stock ?? 0;
       const stockClass = stock > 0 ? 'stock-ok' : 'stock-empty';
-      const stockLabel = stock > 0 ? `${stock} ${p.unit || 'stk'}` : 'Ikke på lager';
+      const totalStr = stock > 0 ? formatStock(stock, p.unit, p.weight_per_unit) : null;
+      const stockLabel = stock > 0 ? (totalStr || `${stock} stk`) : 'Ikke på lager';
       const cat = CATEGORY_LABELS[p.category] || { icon: '📦' };
       return `
         <div class="prod-row">

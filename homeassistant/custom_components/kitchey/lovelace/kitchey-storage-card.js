@@ -12,6 +12,41 @@
 const EXPIRY_DAYS_WARN = 7;
 const EXPIRY_DAYS_CRIT = 3;
 
+/**
+ * Format quantity display.
+ * Returns { primary: "3 stk", secondary: "1.5 L" } or { primary: "3 stk", secondary: null }
+ */
+function formatQty(quantity, unit, weightPerUnit) {
+  const qty = quantity ?? 0;
+
+  // No weight info or unit is stk — just show count
+  if (!weightPerUnit || !unit || unit === 'stk' || unit === 'pcs') {
+    return { primary: `${qty} stk`, secondary: null };
+  }
+
+  const total = qty * weightPerUnit;
+  let secondary = null;
+
+  if (unit === 'ml') {
+    secondary = total >= 1000
+      ? `${+(total / 1000).toFixed(2).replace(/\.?0+$/, '')} L`
+      : `${total} ml`;
+  } else if (unit === 'l') {
+    secondary = `${+total.toFixed(2).replace(/\.?0+$/, '')} L`;
+  } else if (unit === 'g') {
+    secondary = total >= 1000
+      ? `${+(total / 1000).toFixed(2).replace(/\.?0+$/, '')} kg`
+      : `${total} g`;
+  } else if (unit === 'kg') {
+    secondary = `${+total.toFixed(2).replace(/\.?0+$/, '')} kg`;
+  } else {
+    // Unknown unit — show raw
+    return { primary: `${qty} ${unit}`, secondary: null };
+  }
+
+  return { primary: `${qty} stk`, secondary };
+}
+
 class KitcheyStorageCard extends HTMLElement {
   set hass(hass) {
     this._hass = hass;
@@ -64,7 +99,10 @@ class KitcheyStorageCard extends HTMLElement {
         else if (days <= EXPIRY_DAYS_CRIT) rowClass = 'row-crit';
         else if (days <= EXPIRY_DAYS_WARN) rowClass = 'row-warn';
       }
+
+      const { primary, secondary } = formatQty(item.quantity, item.unit, item.weight_per_unit);
       const loc = item.location ? `<span class="loc">${item.location}</span>` : '';
+
       return `
         <div class="row ${rowClass}">
           <div class="row-main">
@@ -72,7 +110,10 @@ class KitcheyStorageCard extends HTMLElement {
             ${loc}
           </div>
           <div class="row-right">
-            <span class="qty">${item.quantity} ${item.unit || ''}</span>
+            <div class="qty-block">
+              <span class="qty-primary">${primary}</span>
+              ${secondary ? `<span class="qty-secondary">${secondary}</span>` : ''}
+            </div>
             ${expiryHtml}
           </div>
         </div>`;
@@ -89,25 +130,27 @@ class KitcheyStorageCard extends HTMLElement {
     this.innerHTML = `
       <ha-card>
         <style>
-          .card-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px 4px; }
-          .card-title  { font-size:15px; font-weight:700; color:var(--primary-text-color); }
-          .card-count  { font-size:13px; color:var(--secondary-text-color); background:var(--secondary-background-color); border-radius:12px; padding:2px 9px; }
-          .alert       { margin:0 12px 6px; padding:7px 12px; border-radius:8px; font-size:12px; font-weight:600; background:rgba(var(--warning-color-rgb,255,152,0),0.15); color:var(--warning-color,#ff9800); }
-          .item-list   { padding:0 8px 8px; }
-          .row         { display:flex; align-items:center; justify-content:space-between; padding:7px 8px; border-radius:8px; margin-bottom:2px; }
-          .row:hover   { background:var(--secondary-background-color); }
-          .row-expired { opacity:0.55; }
-          .row-main    { display:flex; flex-direction:column; gap:1px; min-width:0; }
-          .row-right   { display:flex; align-items:center; gap:6px; flex-shrink:0; }
-          .item-name   { font-size:14px; color:var(--primary-text-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
-          .loc         { font-size:11px; color:var(--secondary-text-color); }
-          .qty         { font-size:13px; color:var(--secondary-text-color); }
-          .badge       { font-size:11px; font-weight:700; border-radius:6px; padding:2px 6px; }
-          .badge.ok      { background:rgba(76,175,130,0.15); color:#4caf82; }
-          .badge.warn    { background:rgba(255,152,0,0.15);  color:#ff9800; }
-          .badge.crit    { background:rgba(244,67,54,0.15);  color:#f44336; }
-          .badge.expired { background:rgba(0,0,0,0.08);      color:var(--disabled-text-color); }
-          .empty { padding:16px; text-align:center; color:var(--secondary-text-color); font-size:13px; }
+          .card-header    { display:flex; align-items:center; justify-content:space-between; padding:12px 16px 4px; }
+          .card-title     { font-size:15px; font-weight:700; color:var(--primary-text-color); }
+          .card-count     { font-size:13px; color:var(--secondary-text-color); background:var(--secondary-background-color); border-radius:12px; padding:2px 9px; }
+          .alert          { margin:0 12px 6px; padding:7px 12px; border-radius:8px; font-size:12px; font-weight:600; background:rgba(var(--warning-color-rgb,255,152,0),0.15); color:var(--warning-color,#ff9800); }
+          .item-list      { padding:0 8px 8px; }
+          .row            { display:flex; align-items:center; justify-content:space-between; padding:7px 8px; border-radius:8px; margin-bottom:2px; }
+          .row:hover      { background:var(--secondary-background-color); }
+          .row-expired    { opacity:0.55; }
+          .row-main       { display:flex; flex-direction:column; gap:1px; min-width:0; flex:1; }
+          .row-right      { display:flex; align-items:center; gap:6px; flex-shrink:0; }
+          .item-name      { font-size:14px; color:var(--primary-text-color); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:180px; }
+          .loc            { font-size:11px; color:var(--secondary-text-color); }
+          .qty-block      { display:flex; flex-direction:column; align-items:flex-end; }
+          .qty-primary    { font-size:13px; color:var(--primary-text-color); font-weight:500; }
+          .qty-secondary  { font-size:11px; color:var(--secondary-text-color); }
+          .badge          { font-size:11px; font-weight:700; border-radius:6px; padding:2px 6px; }
+          .badge.ok       { background:rgba(76,175,130,0.15); color:#4caf82; }
+          .badge.warn     { background:rgba(255,152,0,0.15);  color:#ff9800; }
+          .badge.crit     { background:rgba(244,67,54,0.15);  color:#f44336; }
+          .badge.expired  { background:rgba(0,0,0,0.08);      color:var(--disabled-text-color); }
+          .empty          { padding:16px; text-align:center; color:var(--secondary-text-color); font-size:13px; }
         </style>
         <div class="card-header">
           <span class="card-title">${name}</span>
