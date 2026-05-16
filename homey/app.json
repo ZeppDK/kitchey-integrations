@@ -78,7 +78,17 @@
         "small": "/assets/images/small.png",
         "large": "/assets/images/large.png"
       },
-      "pair": [],
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": { "next": "add_devices" }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
       "settings": [
         {
           "id": "storage_unit_id",
@@ -106,7 +116,17 @@
         "small": "/assets/images/small.png",
         "large": "/assets/images/large.png"
       },
-      "pair": [],
+      "pair": [
+        {
+          "id": "list_devices",
+          "template": "list_devices",
+          "navigation": { "next": "add_devices" }
+        },
+        {
+          "id": "add_devices",
+          "template": "add_devices"
+        }
+      ],
       "settings": []
     }
   ],

@@ -7,23 +7,14 @@ class ShoppingDriver extends Homey.Driver {
     this.log('ShoppingDriver ready');
   }
 
-  /**
-   * Called by app.js after each poll to ensure exactly one shopping list device exists.
-   */
-  async ensureDevice(householdId) {
-    const existing = this.getDevices();
-    if (existing.length === 0) {
-      try {
-        await this.createDevice({
-          name: 'Indkøbsliste',
-          data: { household_id: householdId },
-        });
-        this.log('Created ShoppingDevice');
-      } catch (err) {
-        this.error('Failed to create ShoppingDevice:', err.message);
-        this.homey.notifications.createNotification({ excerpt: `Kitchey: kan ikke oprette indkøbsliste — ${err.message}` }).catch(() => {});
-      }
-    }
+  async onPairListDevices() {
+    const householdId = this.homey.settings.get('household_id') || 'shopping_list';
+    return [
+      {
+        name: 'Indkøbsliste',
+        data: { household_id: householdId },
+      },
+    ];
   }
 
   updateDevices(shopping) {

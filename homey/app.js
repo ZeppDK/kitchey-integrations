@@ -47,26 +47,14 @@ class KitcheyApp extends Homey.App {
       this._lastInventory = inventory;
       this._lastShopping = shopping;
 
-      // Sync devices and update capabilities
-      // Drivers may not be ready on the very first poll — retry in 5s if so
-      try {
-        const suDriver = this.homey.drivers.getDriver('storage-unit');
-        const shDriver = this.homey.drivers.getDriver('shopping');
-        await suDriver.syncDevices(storageUnits);
-        suDriver.updateDevices(inventory);
-        const householdId = this.homey.settings.get('household_id');
-        await shDriver.ensureDevice(householdId);
-        shDriver.updateDevices(shopping);
-      } catch (driverErr) {
-        this.log('Drivers not ready, retrying in 5s:', driverErr.message);
-        setTimeout(() => this._poll(), 5000);
-      }
+      // Update capabilities on paired devices
+      this.homey.drivers.getDriver('storage-unit').updateDevices(inventory);
+      this.homey.drivers.getDriver('shopping').updateDevices(shopping);
 
       this._checkExpiry(inventory);
       this._checkShopping(shopping);
     } catch (err) {
       this.error('Poll failed:', err.message);
-      this.homey.notifications.createNotification({ excerpt: `Kitchey poll fejlede: ${err.message}` }).catch(() => {});
     }
   }
 
