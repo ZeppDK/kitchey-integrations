@@ -1,6 +1,6 @@
 # Kitchey Integrations
 
-Connect your [Kitchey](https://kitchey.aihuset.dk) fridge inventory to Home Assistant and Homey.
+Connect your [Kitchey](https://aihuset.dk/kitchey) fridge inventory to Home Assistant and Homey.
 
 ## What you can do
 
