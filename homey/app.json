@@ -122,7 +122,7 @@
       "id": "server_url",
       "type": "text",
       "title": { "en": "Server URL", "da": "Server-URL" },
-      "value": "https://freshtrack.aihuset.dk",
+      "value": "https://kitchey.aihuset.dk",
       "hint": { "en": "Leave as default to use the Kitchey cloud server, or enter your self-hosted URL.", "da": "Lad stå som standard for at bruge Kitchey-cloudserveren, eller indtast din selvhostede URL." }
     },
     {

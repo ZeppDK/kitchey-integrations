@@ -1,5 +1,5 @@
 DOMAIN = "kitchey"
-DEFAULT_SERVER = "https://freshtrack.aihuset.dk"
+DEFAULT_SERVER = "https://kitchey.aihuset.dk"
 CONF_SERVER_URL = "server_url"
 CONF_TOKEN = "token"
 CONF_HOUSEHOLD_ID = "household_id"

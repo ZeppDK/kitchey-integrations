@@ -71,7 +71,7 @@
   <h2>Server</h2>
   <label>Server URL</label>
   <p class="hint">Standard Kitchey-server, eller din selvhostede URL.</p>
-  <input type="url" id="server_url" placeholder="https://freshtrack.aihuset.dk" />
+  <input type="url" id="server_url" placeholder="https://kitchey.aihuset.dk" />
 </div>
 
 <div class="card">
@@ -90,20 +90,21 @@
 
 <script>
   function onHomeyReady(Homey) {
-    Homey.ready();
-
     Promise.all([
       Homey.get('server_url'),
       Homey.get('token'),
       Homey.get('household_id'),
     ]).then(function(values) {
-      document.getElementById('server_url').value   = values[0] || 'https://freshtrack.aihuset.dk';
+      document.getElementById('server_url').value   = values[0] || 'https://kitchey.aihuset.dk';
       document.getElementById('token').value        = values[1] || '';
       document.getElementById('household_id').value = values[2] || '';
-    }).catch(function() {});
+      Homey.ready();
+    }).catch(function() {
+      Homey.ready();
+    });
 
     document.getElementById('save').addEventListener('click', function() {
-      var serverUrl   = document.getElementById('server_url').value.trim() || 'https://freshtrack.aihuset.dk';
+      var serverUrl   = document.getElementById('server_url').value.trim() || 'https://kitchey.aihuset.dk';
       var token       = document.getElementById('token').value.trim();
       var householdId = document.getElementById('household_id').value.trim();
 

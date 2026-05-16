@@ -1,6 +1,6 @@
 # Kitchey Integrations
 
-Connect your [Kitchey](https://freshtrack.aihuset.dk) fridge inventory to Home Assistant and Homey.
+Connect your [Kitchey](https://kitchey.aihuset.dk) fridge inventory to Home Assistant and Homey.
 
 ## What you can do
 
@@ -19,7 +19,7 @@ Tokens look like `ft_live_...` and give the same access as your account.
 
 ## Server URL
 
-By default both integrations connect to `https://freshtrack.aihuset.dk`.
+By default both integrations connect to `https://kitchey.aihuset.dk`.
 
 If you self-host Kitchey, enter your own URL instead (e.g. `http://192.168.1.10:3035`). See the [Kitchey repo](https://github.com/ZeppDK/freshtrack) for self-hosting instructions.
 
@@ -82,7 +82,7 @@ Or submit to the Homey App Store for store distribution.
 
 1. Open the Kitchey app in Homey
 2. Go to app settings and enter:
-   - **Server URL** (default: `https://freshtrack.aihuset.dk`)
+   - **Server URL** (default: `https://kitchey.aihuset.dk`)
    - **Personal Access Token** (`ft_live_...`)
    - **Household ID** (shown in the Kitchey app under Settings → Advanced)
 3. Save — the app polls immediately
