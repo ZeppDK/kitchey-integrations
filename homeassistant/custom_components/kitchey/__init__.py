@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import logging
 import os
+import shutil
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigEntry
@@ -12,21 +14,28 @@ import homeassistant.helpers.config_validation as cv
 from .const import DOMAIN, CONF_SERVER_URL, CONF_TOKEN, CONF_HOUSEHOLD_ID
 from .coordinator import KitcheyCoordinator
 
+_LOGGER = logging.getLogger(__name__)
+
 PLATFORMS = [Platform.SENSOR]
 
 _LOVELACE_CARDS = ["kitchey-storage-card", "kitchey-shopping-card"]
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
-    """Register bundled Lovelace cards as static resources."""
-    lovelace_dir = os.path.join(os.path.dirname(__file__), "lovelace")
+    """Copy bundled Lovelace cards to www/kitchey/ and register with frontend."""
+    src_dir = os.path.join(os.path.dirname(__file__), "lovelace")
+    dst_dir = hass.config.path("www", "kitchey")
+    os.makedirs(dst_dir, exist_ok=True)
     for card in _LOVELACE_CARDS:
         fname = f"{card}.js"
-        path = os.path.join(lovelace_dir, fname)
-        if os.path.isfile(path):
-            url = f"/kitchey/{fname}"
-            hass.http.register_static_path(url, path, cache_headers=False)
-            add_extra_js_url(hass, url)
+        src = os.path.join(src_dir, fname)
+        dst = os.path.join(dst_dir, fname)
+        if os.path.isfile(src):
+            shutil.copy2(src, dst)
+            add_extra_js_url(hass, f"/local/kitchey/{fname}")
+            _LOGGER.debug("Registered Lovelace card: /local/kitchey/%s", fname)
+        else:
+            _LOGGER.warning("Kitchey card not found: %s", src)
     return True
 
 
