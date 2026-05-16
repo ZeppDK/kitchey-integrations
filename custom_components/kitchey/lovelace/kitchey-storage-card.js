@@ -12,6 +12,16 @@
 const EXPIRY_DAYS_WARN = 7;
 const EXPIRY_DAYS_CRIT = 3;
 
+/** Format per-unit size: 500 ml, 1.5 L, 500 g, 1.5 kg */
+function formatUnitSize(unit, weightPerUnit) {
+  if (!weightPerUnit || !unit || unit === 'stk' || unit === 'pcs') return null;
+  if (unit === 'ml') return weightPerUnit >= 1000 ? `${+(weightPerUnit/1000).toFixed(2).replace(/\.?0+$/,'')} L` : `${weightPerUnit} ml`;
+  if (unit === 'l')  return `${+weightPerUnit.toFixed(2).replace(/\.?0+$/,'')} L`;
+  if (unit === 'g')  return weightPerUnit >= 1000 ? `${+(weightPerUnit/1000).toFixed(2).replace(/\.?0+$/,'')} kg` : `${weightPerUnit} g`;
+  if (unit === 'kg') return `${+weightPerUnit.toFixed(2).replace(/\.?0+$/,'')} kg`;
+  return `${weightPerUnit} ${unit}`;
+}
+
 /**
  * Format quantity display.
  * Returns { primary: "3 stk", secondary: "1.5 L" } or { primary: "3 stk", secondary: null }
@@ -101,13 +111,15 @@ class KitcheyStorageCard extends HTMLElement {
       }
 
       const { primary, secondary } = formatQty(item.quantity, item.unit, item.weight_per_unit);
-      const loc = item.location ? `<span class="loc">${item.location}</span>` : '';
+      const unitSize = formatUnitSize(item.unit, item.weight_per_unit);
+      const subParts = [unitSize, item.location].filter(Boolean);
+      const sub = subParts.length ? `<span class="loc">${subParts.join(' · ')}</span>` : '';
 
       return `
         <div class="row ${rowClass}">
           <div class="row-main">
             <span class="item-name">${item.name || 'Ukendt'}</span>
-            ${loc}
+            ${sub}
           </div>
           <div class="row-right">
             <div class="qty-block">

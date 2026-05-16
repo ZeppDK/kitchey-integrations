@@ -9,6 +9,15 @@
  *   title: Katalog    # optional
  */
 
+function formatUnitSize(unit, weightPerUnit) {
+  if (!weightPerUnit || !unit || unit === 'stk' || unit === 'pcs') return null;
+  if (unit === 'ml') return weightPerUnit >= 1000 ? `${+(weightPerUnit/1000).toFixed(2).replace(/\.?0+$/,'')} L` : `${weightPerUnit} ml`;
+  if (unit === 'l')  return `${+weightPerUnit.toFixed(2).replace(/\.?0+$/,'')} L`;
+  if (unit === 'g')  return weightPerUnit >= 1000 ? `${+(weightPerUnit/1000).toFixed(2).replace(/\.?0+$/,'')} kg` : `${weightPerUnit} g`;
+  if (unit === 'kg') return `${+weightPerUnit.toFixed(2).replace(/\.?0+$/,'')} kg`;
+  return `${weightPerUnit} ${unit}`;
+}
+
 function formatStock(inStock, unit, weightPerUnit) {
   if (!inStock) return null;
   if (!weightPerUnit || !unit || unit === 'stk' || unit === 'pcs') return `${inStock} stk`;
@@ -76,7 +85,9 @@ class KitcheyCatalogCard extends HTMLElement {
 
     const rows = filtered.map(p => {
       const name  = p.name || 'Ukendt';
-      const brand = p.brand ? `<span class="brand">${p.brand}</span>` : '';
+      const unitSize = formatUnitSize(p.unit, p.weight_per_unit);
+      const subParts = [p.brand, unitSize].filter(Boolean);
+      const brand = subParts.length ? `<span class="brand">${subParts.join(' · ')}</span>` : '';
       const stock = p.in_stock ?? 0;
       const stockClass = stock > 0 ? 'stock-ok' : 'stock-empty';
       const totalStr = stock > 0 ? formatStock(stock, p.unit, p.weight_per_unit) : null;
