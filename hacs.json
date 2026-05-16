@@ -1,6 +1,4 @@
 {
   "name": "Kitchey",
-  "content_in_root": false,
-  "homeassistant": "2023.1.0",
-  "filename": "kitchey.zip"
+  "homeassistant": "2023.1.0"
 }

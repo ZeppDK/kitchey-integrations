@@ -1,0 +1,35 @@
+add_to_shopping:
+  name: Add to shopping list
+  description: Adds an item by name to the Kitchey shopping list.
+  fields:
+    name:
+      name: Item name
+      description: Name of the item to add.
+      required: true
+      example: "Mælk"
+      selector:
+        text:
+
+use_item:
+  name: Use item
+  description: Decrements an inventory item's quantity by the given amount.
+  fields:
+    item_id:
+      name: Item ID
+      description: The numeric ID of the inventory item (found in sensor attributes).
+      required: true
+      example: 42
+      selector:
+        number:
+          min: 1
+          mode: box
+    amount:
+      name: Amount
+      description: How many units to deduct (default 1).
+      required: false
+      example: 1
+      default: 1
+      selector:
+        number:
+          min: 1
+          mode: box

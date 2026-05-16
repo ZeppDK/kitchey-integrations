@@ -1,0 +1,27 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Forbind til Kitchey",
+        "description": "Indtast din Kitchey-server URL og et Personal Access Token. Opret tokens i appen under Indstillinger → Avanceret → API-adgangsnøgler.",
+        "data": {
+          "server_url": "Server-URL",
+          "token": "Personal Access Token (ft_live_...)"
+        }
+      },
+      "household": {
+        "title": "Vælg husstand",
+        "data": {
+          "household_id": "Husstand"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Kan ikke forbinde til serveren. Tjek URL og netværk.",
+      "invalid_token": "Token afvist af serveren. Opret et nyt token i Kitchey-appen."
+    },
+    "abort": {
+      "already_configured": "Denne husstand er allerede konfigureret."
+    }
+  }
+}
