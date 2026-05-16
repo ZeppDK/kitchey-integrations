@@ -199,8 +199,8 @@
           "da": "Tilføj [[name]] til indkøbslisten"
         },
         "titleFormatted": {
-          "en": "Add [[name]] to shopping list",
-          "da": "Tilføj [[name]] til indkøbslisten"
+          "en": "Add [[name]] ([[quantity]] [[unit]]) to shopping list",
+          "da": "Tilføj [[name]] ([[quantity]] [[unit]]) til indkøbslisten"
         },
         "args": [
           {
@@ -290,8 +290,8 @@
           "da": "Tilføj [[product]] til lageret"
         },
         "titleFormatted": {
-          "en": "Add [[product]] to inventory",
-          "da": "Tilføj [[product]] til lageret"
+          "en": "Add [[product]] ([[quantity]]×) to [[list_type]] (expires [[expiry_date]])",
+          "da": "Tilføj [[product]] ([[quantity]]×) til [[list_type]] (udløber [[expiry_date]])"
         },
         "args": [
           {
@@ -330,8 +330,8 @@
           "da": "Opret katalogprodukt [[name]]"
         },
         "titleFormatted": {
-          "en": "Create catalog product [[name]]",
-          "da": "Opret katalogprodukt [[name]]"
+          "en": "Create catalog product [[name]] ([[category]], [[unit]], [[brand]])",
+          "da": "Opret katalogprodukt [[name]] ([[category]], [[unit]], [[brand]])"
         },
         "args": [
           {
