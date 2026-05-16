@@ -55,17 +55,43 @@ Copy `homeassistant/custom_components/kitchey/` into your HA `config/custom_comp
 | `sensor.kitchey_<household>_udløber_inden_3_dage` | Items expiring within 3 days |
 | `sensor.kitchey_<household>_udløber_inden_7_dage` | Items expiring within 7 days |
 | `sensor.kitchey_<household>_indkøbsliste` | Unchecked shopping list items |
+| `sensor.kitchey_<household>_<unit>` | One sensor per storage unit (Fryser, Køleskab, etc.) |
 
-Sensor attributes include the full item list (name, expiry date, quantity, location).
+Sensor attributes include the full item list (name, expiry date, quantity, location). Storage unit sensors also expose `expiring_3d` and `unit_id`.
+
+Sensors update every **10 minutes** and immediately after any service call.
 
 ### Services
 
 | Service | Fields | Description |
 |---------|--------|-------------|
-| `kitchey.add_to_shopping` | `name` (string) | Add item to shopping list |
-| `kitchey.use_item` | `item_id` (int), `amount` (int, default 1) | Decrement inventory item |
+| `kitchey.add_to_shopping` | `name` (string) | Add custom item to shopping list |
+| `kitchey.delete_shopping_item` | `item_id` (UUID string) | Remove item from shopping list |
+| `kitchey.check_shopping_item` | `item_id` (UUID string), `checked_by` (string, optional) | Mark shopping item as found |
+| `kitchey.use_item` | `item_id` (UUID string), `amount` (int, default 1) | Decrement inventory item |
+| `kitchey.add_inventory_item` | `product_id` (UUID), `list_type`, `quantity`, `expiry_date` (optional) | Add item to inventory |
+| `kitchey.create_storage_unit` | `name`, `list_type` (fridge/freezer/pantry), `icon` (optional) | Create new storage unit — premium required on cloud |
+| `kitchey.create_shelf` | `name`, `storage_unit_id` (UUID) | Create shelf in a storage unit — premium required on cloud |
 
-Item IDs are found in the sensor's attribute list.
+Item and product IDs are UUIDs found in sensor attributes.
+
+### Lovelace Dashboard Cards
+
+Two custom cards are included in `lovelace/`. Install via HACS (Frontend category) or copy the `.js` files to your `www/` folder and add as resources.
+
+**kitchey-storage-card** — shows all items in one storage unit with expiry colour badges:
+```yaml
+type: custom:kitchey-storage-card
+entity: sensor.kitchey_hjemme_køleskab
+title: Køleskab      # optional
+max_items: 15        # optional, default 20
+```
+
+**kitchey-shopping-card** — shopping list with tap-to-check and inline add:
+```yaml
+type: custom:kitchey-shopping-card
+entity: sensor.kitchey_hjemme_indkøbsliste
+```
 
 ---
 
@@ -95,15 +121,32 @@ homey app install
    - **Household ID** (shown in the Kitchey app under Settings → Advanced)
 3. Save — the app polls immediately
 
+### Devices
+
+Each storage unit (Fryser, Køleskab, Kolonial, etc.) appears as a device in Homey with three stats visible on its card:
+- **Items on stock** — total item count
+- **Expiring ≤3 days** — items expiring within 3 days
+- **Expiring ≤7 days** — items expiring within 7 days
+
+A **Shopping List** device shows the count of unchecked items.
+
+Devices update every **10 minutes** and immediately after any flow action.
+
 ### Flow cards
 
 **Triggers**
-- *An item expires within X days* — fires once per item per day, with tokens: item name, expiry date, quantity
+- *An item expires within X days* — fires once per item per day, tokens: item name, expiry date, quantity
+- *An item expires today* — fires on the expiry day, tokens: item name, quantity
 - *Shopping list has more than X items*
 
 **Actions**
 - *Add [name] to shopping list*
-- *Mark item [id] as used ([amount]×)*
+- *Remove [item] from shopping list*
+- *Mark [item] as found* — checks off a shopping item
+- *Mark [item] as used ([amount]×)* — decrements inventory
+- *Add [product] to inventory* — adds from catalog with quantity
+- *Create storage unit [name] ([type])* — premium required on cloud
+- *Create shelf [name] in [unit]* — premium required on cloud
 
 ---
 

@@ -1,0 +1,42 @@
+'use strict';
+
+const Homey = require('homey');
+
+class StorageUnitDevice extends Homey.Device {
+  async onInit() {
+    this.log('StorageUnitDevice init:', this.getName());
+  }
+
+  async updateFromInventory(inventory) {
+    const unitId = this.getData().storage_unit_id;
+    const items = inventory.filter((i) => i.storage_unit_id === unitId);
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    let expiring3 = 0;
+    let expiring7 = 0;
+    for (const item of items) {
+      if (!item.expiry_date) continue;
+      const exp = new Date(item.expiry_date.slice(0, 10));
+      exp.setHours(0, 0, 0, 0);
+      const days = Math.round((exp - today) / 86400000);
+      if (days >= 0 && days <= 3) expiring3++;
+      if (days >= 0 && days <= 7) expiring7++;
+    }
+
+    await this.setCapabilityValue('measure_item_count', items.length).catch(() => {});
+    await this.setCapabilityValue('measure_expiring_3d', expiring3).catch(() => {});
+    await this.setCapabilityValue('measure_expiring_7d', expiring7).catch(() => {});
+  }
+
+  async onSettings({ newSettings }) {
+    this.log('Settings updated:', newSettings);
+  }
+
+  async onDeleted() {
+    this.log('StorageUnitDevice deleted:', this.getName());
+  }
+}
+
+module.exports = StorageUnitDevice;

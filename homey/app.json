@@ -1,6 +1,6 @@
 {
   "id": "dk.kitchey.homey",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "name": {
@@ -21,6 +21,103 @@
     "name": "Kitchey",
     "email": "kundeservice@aihuset.dk"
   },
+  "capabilities": {
+    "measure_item_count": {
+      "type": "number",
+      "title": { "en": "Items", "da": "Varer" },
+      "units": { "en": "items", "da": "varer" },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/package.svg",
+      "insights": true,
+      "insightsTitleTrue": null,
+      "insightsTitleFalse": null
+    },
+    "measure_expiring_3d": {
+      "type": "number",
+      "title": { "en": "Expiring within 3 days", "da": "Udløber inden 3 dage" },
+      "units": { "en": "items", "da": "varer" },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/expiry.svg",
+      "insights": true,
+      "insightsTitleTrue": null,
+      "insightsTitleFalse": null
+    },
+    "measure_expiring_7d": {
+      "type": "number",
+      "title": { "en": "Expiring within 7 days", "da": "Udløber inden 7 dage" },
+      "units": { "en": "items", "da": "varer" },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/expiry.svg",
+      "insights": true,
+      "insightsTitleTrue": null,
+      "insightsTitleFalse": null
+    },
+    "measure_shopping_count": {
+      "type": "number",
+      "title": { "en": "Shopping list items", "da": "Indkøbsliste varer" },
+      "units": { "en": "items", "da": "varer" },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/cart.svg",
+      "insights": true,
+      "insightsTitleTrue": null,
+      "insightsTitleFalse": null
+    }
+  },
+  "drivers": [
+    {
+      "id": "storage-unit",
+      "name": { "en": "Storage Unit", "da": "Lagerenhed" },
+      "class": "other",
+      "capabilities": ["measure_item_count", "measure_expiring_3d", "measure_expiring_7d"],
+      "capabilitiesOptions": {
+        "measure_item_count": { "title": { "en": "Items on stock", "da": "Varer på lager" } },
+        "measure_expiring_3d": { "title": { "en": "Expiring ≤3 days", "da": "Udløber ≤3 dage" } },
+        "measure_expiring_7d": { "title": { "en": "Expiring ≤7 days", "da": "Udløber ≤7 dage" } }
+      },
+      "images": {
+        "small": "/assets/images/small.png",
+        "large": "/assets/images/large.png"
+      },
+      "pair": [],
+      "settings": [
+        {
+          "id": "storage_unit_id",
+          "type": "label",
+          "label": { "en": "Storage Unit ID", "da": "Lagerenhed-ID" },
+          "value": ""
+        },
+        {
+          "id": "list_type",
+          "type": "label",
+          "label": { "en": "List type", "da": "Listetype" },
+          "value": ""
+        }
+      ]
+    },
+    {
+      "id": "shopping",
+      "name": { "en": "Shopping List", "da": "Indkøbsliste" },
+      "class": "other",
+      "capabilities": ["measure_shopping_count"],
+      "capabilitiesOptions": {
+        "measure_shopping_count": { "title": { "en": "Unchecked items", "da": "Ikke-fundne varer" } }
+      },
+      "images": {
+        "small": "/assets/images/small.png",
+        "large": "/assets/images/large.png"
+      },
+      "pair": [],
+      "settings": []
+    }
+  ],
   "flow": {
     "triggers": [
       {
@@ -46,6 +143,17 @@
         "tokens": [
           { "name": "item_name", "type": "string", "title": { "en": "Item name" } },
           { "name": "expiry_date", "type": "string", "title": { "en": "Expiry date" } },
+          { "name": "quantity", "type": "number", "title": { "en": "Quantity" } }
+        ]
+      },
+      {
+        "id": "item_expires_today",
+        "title": {
+          "en": "An item expires today",
+          "da": "En vare udløber i dag"
+        },
+        "tokens": [
+          { "name": "item_name", "type": "string", "title": { "en": "Item name" } },
           { "name": "quantity", "type": "number", "title": { "en": "Quantity" } }
         ]
       },
@@ -91,6 +199,42 @@
         ]
       },
       {
+        "id": "delete_shopping_item",
+        "title": {
+          "en": "Remove item [[item]] from shopping list",
+          "da": "Fjern [[item]] fra indkøbslisten"
+        },
+        "titleFormatted": {
+          "en": "Remove item [[item]] from shopping list",
+          "da": "Fjern [[item]] fra indkøbslisten"
+        },
+        "args": [
+          {
+            "type": "autocomplete",
+            "name": "item",
+            "title": { "en": "Item", "da": "Vare" }
+          }
+        ]
+      },
+      {
+        "id": "check_shopping_item",
+        "title": {
+          "en": "Mark [[item]] as found",
+          "da": "Marker [[item]] som fundet"
+        },
+        "titleFormatted": {
+          "en": "Mark [[item]] as found",
+          "da": "Marker [[item]] som fundet"
+        },
+        "args": [
+          {
+            "type": "autocomplete",
+            "name": "item",
+            "title": { "en": "Item", "da": "Vare" }
+          }
+        ]
+      },
+      {
         "id": "use_item",
         "title": {
           "en": "Mark [[item]] as used ([[amount]]×)",
@@ -112,6 +256,82 @@
             "title": { "en": "Amount", "da": "Antal" },
             "min": 1,
             "step": 1
+          }
+        ]
+      },
+      {
+        "id": "add_inventory_item",
+        "title": {
+          "en": "Add [[product]] to inventory",
+          "da": "Tilføj [[product]] til lageret"
+        },
+        "titleFormatted": {
+          "en": "Add [[product]] to inventory",
+          "da": "Tilføj [[product]] til lageret"
+        },
+        "args": [
+          {
+            "type": "autocomplete",
+            "name": "product",
+            "title": { "en": "Product", "da": "Produkt" }
+          },
+          {
+            "type": "number",
+            "name": "quantity",
+            "title": { "en": "Quantity", "da": "Antal" },
+            "min": 1,
+            "step": 1
+          }
+        ]
+      },
+      {
+        "id": "create_storage_unit",
+        "title": {
+          "en": "Create storage unit [[name]]",
+          "da": "Opret lagerenhed [[name]]"
+        },
+        "titleFormatted": {
+          "en": "Create storage unit [[name]] ([[list_type]])",
+          "da": "Opret lagerenhed [[name]] ([[list_type]])"
+        },
+        "args": [
+          {
+            "type": "text",
+            "name": "name",
+            "title": { "en": "Name", "da": "Navn" }
+          },
+          {
+            "type": "dropdown",
+            "name": "list_type",
+            "title": { "en": "Type", "da": "Type" },
+            "values": [
+              { "id": "fridge", "label": { "en": "Fridge", "da": "Køleskab" } },
+              { "id": "freezer", "label": { "en": "Freezer", "da": "Fryser" } },
+              { "id": "pantry", "label": { "en": "Pantry", "da": "Kolonial" } }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "create_shelf",
+        "title": {
+          "en": "Create shelf [[name]] in [[unit]]",
+          "da": "Opret hylde [[name]] i [[unit]]"
+        },
+        "titleFormatted": {
+          "en": "Create shelf [[name]] in [[unit]]",
+          "da": "Opret hylde [[name]] i [[unit]]"
+        },
+        "args": [
+          {
+            "type": "text",
+            "name": "name",
+            "title": { "en": "Shelf name", "da": "Hyldenavn" }
+          },
+          {
+            "type": "autocomplete",
+            "name": "unit",
+            "title": { "en": "Storage unit", "da": "Lagerenhed" }
           }
         ]
       }

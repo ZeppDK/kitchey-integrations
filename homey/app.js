@@ -9,7 +9,8 @@ class KitcheyApp extends Homey.App {
     this._api = null;
     this._pollInterval = null;
     this._lastShoppingCount = 0;
-    // Track which items have fired today: "itemId:YYYY-MM-DD" → Set of daysLeft thresholds fired
+    this._lastInventory = [];
+    this._lastShopping = [];
     this._firedExpiry = new Map();
 
     this._registerFlowCards();
@@ -24,23 +25,39 @@ class KitcheyApp extends Homey.App {
       clearInterval(this._pollInterval);
       this._pollInterval = null;
     }
-    const serverUrl = this.homey.settings.get('server_url');
-    const token = this.homey.settings.get('token');
+    const serverUrl   = this.homey.settings.get('server_url');
+    const token       = this.homey.settings.get('token');
     const householdId = this.homey.settings.get('household_id');
     if (!serverUrl || !token || !householdId) return;
 
     this._api = new KitcheyApi({ serverUrl, token, householdId });
     await this._poll();
-    this._pollInterval = setInterval(() => this._poll(), 30 * 60 * 1000);
+    this._pollInterval = setInterval(() => this._poll(), 10 * 60 * 1000);
   }
 
   async _poll() {
     if (!this._api) return;
     try {
-      const [inventory, shopping] = await Promise.all([
+      const [inventory, shopping, storageUnits] = await Promise.all([
         this._api.getInventory(),
         this._api.getShopping(),
+        this._api.getStorageUnits(),
       ]);
+
+      this._lastInventory = inventory;
+      this._lastShopping = shopping;
+
+      // Update device capabilities
+      const suDriver = this.homey.drivers.getDriver('storage-unit');
+      const shDriver = this.homey.drivers.getDriver('shopping');
+
+      await suDriver.syncDevices(storageUnits, this);
+      suDriver.updateDevices(inventory);
+
+      const householdId = this.homey.settings.get('household_id');
+      await shDriver.ensureDevice(householdId);
+      shDriver.updateDevices(shopping);
+
       this._checkExpiry(inventory);
       this._checkShopping(shopping);
     } catch (err) {
@@ -60,7 +77,6 @@ class KitcheyApp extends Homey.App {
       const daysLeft = Math.round((exp - today) / 86400000);
       if (daysLeft < 0 || daysLeft > 30) continue;
 
-      // Fire once per item per day (reset after midnight via key containing today)
       const fireKey = `${item.id}:${todayKey}`;
       if (this._firedExpiry.has(fireKey)) continue;
       this._firedExpiry.set(fireKey, true);
@@ -71,9 +87,14 @@ class KitcheyApp extends Homey.App {
           { daysLeft },
         )
         .catch(() => {});
+
+      if (daysLeft === 0) {
+        this._triggerItemExpiresToday
+          .trigger({ item_name: item.name, quantity: item.quantity })
+          .catch(() => {});
+      }
     }
 
-    // Prune old keys to avoid unbounded growth
     for (const key of this._firedExpiry.keys()) {
       if (!key.includes(todayKey)) this._firedExpiry.delete(key);
     }
@@ -90,45 +111,145 @@ class KitcheyApp extends Homey.App {
     }
   }
 
+  _requireApi() {
+    if (!this._api) throw new Error('Kitchey not configured — check app settings');
+    return this._api;
+  }
+
   _registerFlowCards() {
-    // Triggers
+    // ── Triggers ────────────────────────────────────────────────────────
+
     this._triggerItemExpiresSoon = this.homey.flow.getTriggerCard('item_expires_soon');
     this._triggerItemExpiresSoon.registerRunListener(async (args, state) => {
-      // Fire when item's daysLeft is within the threshold set in the flow card
       return state.daysLeft <= args.days;
     });
+
+    this._triggerItemExpiresToday = this.homey.flow.getTriggerCard('item_expires_today');
 
     this._triggerShoppingCountAbove = this.homey.flow.getTriggerCard('shopping_count_above');
     this._triggerShoppingCountAbove.registerRunListener(async (args, state) => {
       return state.count > args.count;
     });
 
-    // Actions
+    // ── Shopping actions ─────────────────────────────────────────────────
+
     this.homey.flow.getActionCard('add_to_shopping').registerRunListener(async (args) => {
-      if (!this._api) throw new Error('Kitchey not configured — check app settings');
-      const { status } = await this._api.addToShopping(args.name);
+      const api = this._requireApi();
+      const { status } = await api.addToShopping(args.name);
       if (status !== 200 && status !== 201) throw new Error(`API error: ${status}`);
+      this._poll().catch(() => {});
     });
+
+    const deleteShoppingCard = this.homey.flow.getActionCard('delete_shopping_item');
+    deleteShoppingCard.registerArgumentAutocompleteListener('item', async (query) => {
+      if (!this._api) return [];
+      return this._lastShopping
+        .filter((i) => !i.checked && (!query || (i.product_name || i.custom_name || '').toLowerCase().includes(query.toLowerCase())))
+        .slice(0, 50)
+        .map((i) => ({
+          id: i.id,
+          name: i.product_name || i.custom_name || 'Ukendt',
+          description: `${i.quantity} ${i.unit}`,
+        }));
+    });
+    deleteShoppingCard.registerRunListener(async (args) => {
+      const api = this._requireApi();
+      const { status } = await api.deleteShoppingItem(args.item.id);
+      if (status !== 200 && status !== 204) throw new Error(`API error: ${status}`);
+      this._poll().catch(() => {});
+    });
+
+    const checkShoppingCard = this.homey.flow.getActionCard('check_shopping_item');
+    checkShoppingCard.registerArgumentAutocompleteListener('item', async (query) => {
+      if (!this._api) return [];
+      return this._lastShopping
+        .filter((i) => !i.checked && (!query || (i.product_name || i.custom_name || '').toLowerCase().includes(query.toLowerCase())))
+        .slice(0, 50)
+        .map((i) => ({
+          id: i.id,
+          name: i.product_name || i.custom_name || 'Ukendt',
+          description: `${i.quantity} ${i.unit}`,
+        }));
+    });
+    checkShoppingCard.registerRunListener(async (args) => {
+      const api = this._requireApi();
+      const { status } = await api.checkShoppingItem(args.item.id, 'Homey');
+      if (status !== 200) throw new Error(`API error: ${status}`);
+      this._poll().catch(() => {});
+    });
+
+    // ── Inventory actions ─────────────────────────────────────────────────
 
     const useItemCard = this.homey.flow.getActionCard('use_item');
     useItemCard.registerArgumentAutocompleteListener('item', async (query) => {
       if (!this._api) return [];
+      return this._lastInventory
+        .filter((i) => !query || i.name.toLowerCase().includes(query.toLowerCase()))
+        .slice(0, 50)
+        .map((i) => ({
+          id: i.id,
+          name: i.name,
+          description: `Antal: ${i.quantity}${i.expiry_date ? ' · Udløber: ' + i.expiry_date.slice(0, 10) : ''}`,
+        }));
+    });
+    useItemCard.registerRunListener(async (args) => {
+      const api = this._requireApi();
+      const { status } = await api.useItem(args.item.id, args.amount ?? 1);
+      if (status !== 200) throw new Error(`API error: ${status}`);
+      this._poll().catch(() => {});
+    });
+
+    const addInventoryCard = this.homey.flow.getActionCard('add_inventory_item');
+    addInventoryCard.registerArgumentAutocompleteListener('product', async (query) => {
+      if (!this._api) return [];
       try {
-        const inventory = await this._api.getInventory();
-        return inventory
-          .filter(i => !query || i.name.toLowerCase().includes(query.toLowerCase()))
+        const { body } = await this._api.request('GET', '/api/catalog');
+        const catalog = Array.isArray(body) ? body : [];
+        return catalog
+          .filter((p) => !query || p.name.toLowerCase().includes(query.toLowerCase()))
           .slice(0, 50)
-          .map(i => ({
-            id: i.id,
-            name: i.name,
-            description: `Antal: ${i.quantity}${i.expiry_date ? ' · Udløber: ' + i.expiry_date.slice(0, 10) : ''}`,
+          .map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.brand || p.category || '',
+            list_type: p.category || 'pantry',
           }));
       } catch { return []; }
     });
-    useItemCard.registerRunListener(async (args) => {
-      if (!this._api) throw new Error('Kitchey not configured — check app settings');
-      const { status } = await this._api.useItem(args.item.id, args.amount ?? 1);
-      if (status !== 200) throw new Error(`API error: ${status}`);
+    addInventoryCard.registerRunListener(async (args) => {
+      const api = this._requireApi();
+      const { status } = await api.addInventoryItem(
+        args.product.id,
+        args.quantity ?? 1,
+        args.product.list_type || 'pantry',
+        null,
+      );
+      if (status !== 200 && status !== 201) throw new Error(`API error: ${status}`);
+      this._poll().catch(() => {});
+    });
+
+    // ── Creation actions (premium-gated) ──────────────────────────────────
+
+    this.homey.flow.getActionCard('create_storage_unit').registerRunListener(async (args) => {
+      const api = this._requireApi();
+      const { status } = await api.createStorageUnit(args.name, args.list_type.id || args.list_type, '');
+      if (status !== 200 && status !== 201) throw new Error(`API error: ${status}`);
+      this._poll().catch(() => {});
+    });
+
+    const createShelfCard = this.homey.flow.getActionCard('create_shelf');
+    createShelfCard.registerArgumentAutocompleteListener('unit', async (query) => {
+      if (!this._api) return [];
+      const units = await this._api.getStorageUnits();
+      return units
+        .filter((u) => !query || u.name.toLowerCase().includes(query.toLowerCase()))
+        .map((u) => ({ id: u.id, name: u.name, description: u.list_type }));
+    });
+    createShelfCard.registerRunListener(async (args) => {
+      const api = this._requireApi();
+      const { status } = await api.createShelf(args.name, args.unit.id);
+      if (status !== 200 && status !== 201) throw new Error(`API error: ${status}`);
+      this._poll().catch(() => {});
     });
   }
 }

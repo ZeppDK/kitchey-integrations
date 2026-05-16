@@ -1,4 +1,5 @@
 {
   "name": "Kitchey",
-  "homeassistant": "2023.1.0"
+  "homeassistant": "2023.1.0",
+  "content_in_root": false
 }

@@ -17,11 +17,34 @@ async def async_setup_entry(
 ) -> None:
     coordinator: KitcheyCoordinator = hass.data[DOMAIN][entry.entry_id]
     household = entry.data[CONF_HOUSEHOLD_NAME]
-    async_add_entities([
+
+    # Static sensors always present
+    entities: list[SensorEntity] = [
         KitcheyExpiringSensor(coordinator, entry, household, days=3),
         KitcheyExpiringSensor(coordinator, entry, household, days=7),
         KitcheyShoppingSensor(coordinator, entry, household),
-    ])
+    ]
+
+    # Dynamic per-storage-unit sensors (one per unit returned by API)
+    known_unit_ids: set[str] = set()
+    for unit in coordinator.data.get("storage_units", []):
+        sensor = KitcheyStorageUnitSensor(coordinator, entry, household, unit)
+        entities.append(sensor)
+        known_unit_ids.add(unit["id"])
+
+    async_add_entities(entities)
+
+    # Re-create unit sensors if storage units change after initial load
+    def _add_new_unit_sensors() -> None:
+        new_entities = []
+        for unit in coordinator.data.get("storage_units", []):
+            if unit["id"] not in known_unit_ids:
+                known_unit_ids.add(unit["id"])
+                new_entities.append(KitcheyStorageUnitSensor(coordinator, entry, household, unit))
+        if new_entities:
+            async_add_entities(new_entities)
+
+    coordinator.async_add_listener(_add_new_unit_sensors)
 
 
 class KitcheyExpiringSensor(CoordinatorEntity, SensorEntity):
@@ -74,7 +97,76 @@ class KitcheyShoppingSensor(CoordinatorEntity, SensorEntity):
     def extra_state_attributes(self) -> dict:
         return {
             "items": [
-                {"id": i["id"], "name": i.get("product_name") or i.get("custom_name"), "quantity": i.get("quantity")}
+                {
+                    "id": i["id"],
+                    "name": i.get("product_name") or i.get("custom_name"),
+                    "quantity": i.get("quantity"),
+                    "unit": i.get("unit"),
+                }
                 for i in self.coordinator.data.get("shopping", [])
             ]
+        }
+
+
+class KitcheyStorageUnitSensor(CoordinatorEntity, SensorEntity):
+    _attr_state_class = SensorStateClass.MEASUREMENT
+    _attr_native_unit_of_measurement = "items"
+
+    _LIST_TYPE_ICONS = {
+        "fridge": "mdi:fridge",
+        "freezer": "mdi:snowflake",
+        "pantry": "mdi:cupboard",
+    }
+
+    def __init__(
+        self,
+        coordinator: KitcheyCoordinator,
+        entry: ConfigEntry,
+        household: str,
+        unit: dict,
+    ) -> None:
+        super().__init__(coordinator)
+        self._unit_id = unit["id"]
+        self._unit_name = unit["name"]
+        self._list_type = unit.get("list_type", "")
+        self._attr_unique_id = f"{entry.entry_id}_unit_{self._unit_id}"
+        self._attr_name = f"Kitchey {household} {self._unit_name}"
+        self._attr_icon = self._LIST_TYPE_ICONS.get(self._list_type, "mdi:package-variant")
+
+    @property
+    def native_value(self) -> int:
+        items = self._get_items()
+        return len(items)
+
+    def _get_items(self) -> list:
+        inventory = self.coordinator.data.get("inventory", [])
+        return [i for i in inventory if i.get("storage_unit_id") == self._unit_id]
+
+    @property
+    def extra_state_attributes(self) -> dict:
+        items = self._get_items()
+        today_str = str(__import__("datetime").date.today())
+        expiring_3 = sum(
+            1 for i in items
+            if i.get("expiry_date") and i["expiry_date"][:10] >= today_str
+            and (
+                __import__("datetime").date.fromisoformat(i["expiry_date"][:10])
+                - __import__("datetime").date.today()
+            ).days <= 3
+        )
+        return {
+            "unit_id": self._unit_id,
+            "list_type": self._list_type,
+            "expiring_3d": expiring_3,
+            "items": [
+                {
+                    "id": i["id"],
+                    "name": i.get("name"),
+                    "quantity": i.get("quantity"),
+                    "unit": i.get("unit"),
+                    "expiry_date": i.get("expiry_date", "")[:10] if i.get("expiry_date") else None,
+                    "location": i.get("location_name"),
+                }
+                for i in items
+            ],
         }
