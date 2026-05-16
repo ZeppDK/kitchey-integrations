@@ -176,11 +176,13 @@
 
     async _fetchSettings() {
       try {
-        const [hh, prof, pref] = await Promise.all([
-          this._api('GET', `/api/households/${this._config.household_id}`),
+        const [households, prof, pref] = await Promise.all([
+          this._api('GET', '/api/households'),
           this._api('GET', '/api/auth/me', null, true),
           this._api('GET', '/api/preferences', null, true),
         ]);
+        const hhList = Array.isArray(households) ? households : [households];
+        const hh = hhList.find(h => h.id === this._config.household_id) || hhList[0] || null;
         this._household   = hh;
         this._profile     = prof;
         this._preferences = pref || { filters: [] };
@@ -386,7 +388,7 @@
       });
 
       const rows = filtered.map(item => {
-        const name    = item.product_name || item.custom_name || 'Ukendt';
+        const name    = item.name || item.product_name || item.custom_name || 'Ukendt';
         const unit    = this._storageUnits.find(u => u.id === item.storage_unit_id);
         const loc     = item.location_name || '';
         const sub     = [unit?.name, loc].filter(Boolean).join(' · ');
@@ -618,7 +620,7 @@
 
     _htmlDrawer() {
       const item = this._drawerItem;
-      const name = item.product_name || item.custom_name || 'Ukendt';
+      const name = item.name || item.product_name || item.custom_name || 'Ukendt';
       const locs = this._locations.filter(l => l.storage_unit_id === item.storage_unit_id);
       const locOptions = [
         `<option value="">Ingen hylde</option>`,
