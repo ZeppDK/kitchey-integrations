@@ -17,7 +17,9 @@ class StorageUnitDriver extends Homey.Driver {
       throw new Error(`getStorageUnits fejlede: ${err.message}`);
     }
     if (!Array.isArray(units) || units.length === 0) {
-      throw new Error(`API returnerede ingen enheder (rådata: ${JSON.stringify(units)})`);
+      const serverUrl = this.homey.settings.get('server_url');
+      const householdId = this.homey.settings.get('household_id');
+      throw new Error(`API returnerede ingen enheder. Server: ${serverUrl}, Husstand: ${householdId}, Rådata: ${JSON.stringify(units)}`);
     }
     return units.map((unit) => ({
       name: unit.name,
