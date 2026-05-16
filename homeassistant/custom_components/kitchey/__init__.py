@@ -48,28 +48,42 @@ class KitcheyConfigView(HomeAssistantView):
         })
 
 
+def _copy_static_files(src_lovelace: str, src_panel: str, dst_dir: str) -> bool:
+    """Copy JS files to www/kitchey/. Runs in executor (blocking I/O)."""
+    os.makedirs(dst_dir, exist_ok=True)
+    for card in _LOVELACE_CARDS:
+        fname = f"{card}.js"
+        src = os.path.join(src_lovelace, fname)
+        if os.path.isfile(src):
+            shutil.copy2(src, os.path.join(dst_dir, fname))
+        else:
+            _LOGGER.warning("Kitchey card not found: %s", src)
+    panel_found = os.path.isfile(src_panel)
+    if panel_found:
+        shutil.copy2(src_panel, os.path.join(dst_dir, "kitchey-panel.js"))
+    else:
+        _LOGGER.warning("Kitchey panel JS not found: %s", src_panel)
+    return panel_found
+
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Copy bundled JS files to www/kitchey/, register Lovelace cards and the sidebar panel."""
     src_lovelace = os.path.join(os.path.dirname(__file__), "lovelace")
     src_panel    = os.path.join(os.path.dirname(__file__), "panel", "kitchey-panel.js")
     dst_dir      = hass.config.path("www", "kitchey")
-    os.makedirs(dst_dir, exist_ok=True)
 
-    # Lovelace cards
+    panel_found = await hass.async_add_executor_job(
+        _copy_static_files, src_lovelace, src_panel, dst_dir
+    )
+
+    # Register Lovelace card URLs (non-blocking)
     for card in _LOVELACE_CARDS:
         fname = f"{card}.js"
-        src = os.path.join(src_lovelace, fname)
-        dst = os.path.join(dst_dir, fname)
-        if os.path.isfile(src):
-            shutil.copy2(src, dst)
-            add_extra_js_url(hass, f"/local/kitchey/{fname}?v={_VERSION}")
-            _LOGGER.debug("Registered Lovelace card: /local/kitchey/%s?v=%s", fname, _VERSION)
-        else:
-            _LOGGER.warning("Kitchey card not found: %s", src)
+        add_extra_js_url(hass, f"/local/kitchey/{fname}?v={_VERSION}")
+        _LOGGER.debug("Registered Lovelace card: /local/kitchey/%s?v=%s", fname, _VERSION)
 
     # Sidebar panel
-    if os.path.isfile(src_panel):
-        shutil.copy2(src_panel, os.path.join(dst_dir, "kitchey-panel.js"))
+    if panel_found:
         await panel_custom.async_register_panel(
             hass,
             webcomponent_name="kitchey-panel",
@@ -80,8 +94,6 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
             require_admin=False,
         )
         _LOGGER.debug("Registered Kitchey sidebar panel")
-    else:
-        _LOGGER.warning("Kitchey panel JS not found: %s", src_panel)
 
     # Config endpoint for the panel
     hass.http.register_view(KitcheyConfigView())
