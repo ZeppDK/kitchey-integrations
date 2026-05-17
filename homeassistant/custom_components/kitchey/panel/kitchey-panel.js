@@ -1213,10 +1213,14 @@
         this._render();
       });
 
-      // Step: search
+      // Step: search — re-focus after render to avoid losing focus on each keypress
       root.querySelector('#modal-search')?.addEventListener('input', e => {
-        this._addModal = { ...this._addModal, search: e.target.value };
+        const val = e.target.value;
+        const pos = e.target.selectionStart;
+        this._addModal = { ...this._addModal, search: val };
         this._render();
+        const inp = root.querySelector('#modal-search');
+        if (inp) { inp.focus(); inp.setSelectionRange(pos, pos); }
       });
       root.querySelector('#modal-scan-barcode')?.addEventListener('click', () => {
         // Trigger barcode simulation prompt (HID scanner will trigger _onKeydown naturally)
