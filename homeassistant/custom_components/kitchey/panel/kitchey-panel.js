@@ -55,6 +55,7 @@
 
       // navigation
       this._tab = 'lager';
+      this._editShopId = null;
 
       // credentials (from /api/kitchey/config)
       this._config = null;
@@ -397,17 +398,32 @@
         const name = item.name || item.product_name || item.custom_name || 'Ukendt';
         return `<div class="row clickable" data-inv-id="${esc(item.id)}">
           <div class="info"><div class="name">${esc(name)}</div></div>
-          <span class="badge badge-grey">${item.quantity ?? 0} stk</span>
+          <span class="badge badge-grey">${item.quantity ?? 0} ${esc(item.unit || 'stk')}</span>
           ${expiryBadge(item.expiry_date)}
           <span class="chevron">›</span>
         </div>`;
       };
 
+      // Pre-group items: by storage_unit_id if set, else by list_type to first unit of that type
+      const unitByType = new Map();
+      this._storageUnits.forEach(u => { if (!unitByType.has(u.list_type)) unitByType.set(u.list_type, u); });
+      const itemsByUnit = new Map();
+      this._storageUnits.forEach(u => itemsByUnit.set(u.id, []));
+      this._inventory.forEach(item => {
+        if (item.storage_unit_id && itemsByUnit.has(item.storage_unit_id)) {
+          itemsByUnit.get(item.storage_unit_id).push(item);
+        } else if (item.list_type) {
+          const fallback = unitByType.get(item.list_type);
+          if (fallback) itemsByUnit.get(fallback.id).push(item);
+        }
+      });
+
       let anyItems = false;
       const sections = visibleUnits.map(unit => {
         const unitLocs = this._locations.filter(l => l.storage_unit_id === unit.id);
-        const unitItems = this._inventory.filter(i =>
-          i.storage_unit_id === unit.id && (!q || (i.name || '').toLowerCase().includes(q))
+        const allUnitItems = itemsByUnit.get(unit.id) || [];
+        const unitItems = allUnitItems.filter(i =>
+          !q || (i.name || '').toLowerCase().includes(q)
         );
         if (unitItems.length === 0) return '';
         anyItems = true;
@@ -452,17 +468,32 @@
       });
 
       const hasChecked = this._shopping.some(i => i.checked);
+      const editId = this._editShopId;
 
       const rows = filtered.map(i => {
         const name = i.product_name || i.custom_name || 'Ukendt';
+        if (editId === i.id) {
+          return `<div class="shop-row" style="flex-wrap:wrap;gap:6px;padding:8px 8px">
+            <div class="check-circle" style="opacity:.3;cursor:default">
+              <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+                <circle cx="6" cy="6" r="5" stroke="#ccc" stroke-width="1.5"/>
+              </svg>
+            </div>
+            <div class="info"><div class="name">${esc(name)}</div></div>
+            <input class="inp add-qty" id="shop-edit-qty" type="number" min="1" value="${i.quantity ?? 1}" style="width:64px"/>
+            <input class="inp add-unit" id="shop-edit-unit" value="${esc(i.unit || 'stk')}" style="width:72px"/>
+            <button class="btn btn-primary" data-save-shop="${esc(i.id)}" style="padding:8px 12px">✓</button>
+            <button class="btn btn-ghost" id="shop-edit-cancel" style="padding:8px 12px">✕</button>
+          </div>`;
+        }
         return `<div class="shop-row">
           <div class="check-circle" data-check-id="${esc(i.id)}" title="Markér som fundet">
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <circle cx="6" cy="6" r="5" stroke="#ccc" stroke-width="1.5"/>
             </svg>
           </div>
-          <div class="info"><div class="name">${esc(name)}</div></div>
-          <span class="badge badge-grey">${i.quantity ?? 1} ${esc(i.unit || 'stk')}</span>
+          <div class="info" style="cursor:pointer" data-edit-shop="${esc(i.id)}"><div class="name">${esc(name)}</div></div>
+          <span class="badge badge-grey" style="cursor:pointer" data-edit-shop="${esc(i.id)}">${i.quantity ?? 1} ${esc(i.unit || 'stk')}</span>
           <button class="del-btn" data-del-shop="${esc(i.id)}" title="Slet">✕</button>
         </div>`;
       }).join('');
@@ -774,6 +805,27 @@
       root.querySelector('#shop-search')?.addEventListener('input', e => {
         this._searchShop = e.target.value; this._render();
       });
+      root.querySelectorAll('[data-edit-shop]').forEach(el =>
+        el.addEventListener('click', () => {
+          this._editShopId = el.dataset.editShop;
+          this._render();
+        })
+      );
+      root.querySelector('#shop-edit-cancel')?.addEventListener('click', () => {
+        this._editShopId = null; this._render();
+      });
+      root.querySelectorAll('[data-save-shop]').forEach(btn =>
+        btn.addEventListener('click', async () => {
+          const id  = btn.dataset.saveShop;
+          const qty = parseInt(root.querySelector('#shop-edit-qty')?.value) || 1;
+          const unit = root.querySelector('#shop-edit-unit')?.value.trim() || 'stk';
+          try {
+            await this._api('PUT', `/api/shopping/${id}`, { quantity: qty, unit });
+            this._editShopId = null;
+            await this._fetchAll(); this._render();
+          } catch (e) { this._errors.global = e.message; this._render(); }
+        })
+      );
       root.querySelectorAll('[data-check-id]').forEach(btn =>
         btn.addEventListener('click', async () => {
           try {
