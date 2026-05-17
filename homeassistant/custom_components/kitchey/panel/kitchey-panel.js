@@ -962,8 +962,11 @@
         this._openAddModal('search');
       });
       root.querySelector('#lager-search')?.addEventListener('input', e => {
+        const pos = e.target.selectionStart;
         this._searchLager = e.target.value;
         this._render();
+        const inp = root.querySelector('#lager-search');
+        if (inp) { inp.focus(); inp.setSelectionRange(pos, pos); }
       });
       root.querySelectorAll('[data-unit]').forEach(btn =>
         btn.addEventListener('click', () => { this._filterUnit = btn.dataset.unit; this._render(); })
@@ -1045,7 +1048,11 @@
 
       // ── Shopping
       root.querySelector('#shop-search')?.addEventListener('input', e => {
-        this._searchShop = e.target.value; this._render();
+        const pos = e.target.selectionStart;
+        this._searchShop = e.target.value;
+        this._render();
+        const inp = root.querySelector('#shop-search');
+        if (inp) { inp.focus(); inp.setSelectionRange(pos, pos); }
       });
       root.querySelectorAll('[data-edit-shop]').forEach(el =>
         el.addEventListener('click', () => {
@@ -1107,7 +1114,11 @@
 
       // ── Catalog
       root.querySelector('#cat-search')?.addEventListener('input', e => {
-        this._searchCat = e.target.value; this._render();
+        const pos = e.target.selectionStart;
+        this._searchCat = e.target.value;
+        this._render();
+        const inp = root.querySelector('#cat-search');
+        if (inp) { inp.focus(); inp.setSelectionRange(pos, pos); }
       });
       root.querySelectorAll('[data-cat]').forEach(btn =>
         btn.addEventListener('click', () => { this._filterCat = btn.dataset.cat; this._render(); })
