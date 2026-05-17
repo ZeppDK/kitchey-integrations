@@ -4,6 +4,7 @@ Connect your [Kitchey](https://aihuset.dk/kitchey) fridge inventory to Home Assi
 
 ## What you can do
 
+- **Sidebar panel** — full Kitchey Command Center pinned to the HA sidebar: browse and edit inventory, manage your shopping list, search the catalog, and configure storage units and shelves — all without leaving Home Assistant
 - See items expiring within 3 or 7 days as sensors
 - See your shopping list item count as a sensor
 - See stock counts per storage unit as sensors
@@ -49,7 +50,16 @@ Copy `custom_components/kitchey/` into your HA `config/custom_components/` folde
 1. Settings → Devices & Services → Add Integration → search "Kitchey"
 2. Enter server URL and PAT token
 3. Select your household
-4. Done — sensors and dashboard cards are ready immediately
+4. Done — sensors, dashboard cards, and the sidebar panel are ready immediately
+
+### Sidebar Panel
+
+After setup a **Kitchey** entry appears in the HA sidebar (fridge icon). It opens a full management panel with four tabs:
+
+- **Lager** — browse inventory grouped by storage unit and shelf, edit quantity/expiry/location/notes, add items via catalog search or barcode scanner (HID keyboard wedge supported)
+- **Indkøb** — shopping list with inline add, tap-to-check, quantity edit, and clear checked
+- **Katalog** — full product catalog with stock levels and category filter
+- **Indstillinger** — household info, storage units and shelves (create/delete, premium-gated on cloud), dietary preferences, profile name
 
 ### Sensors
 
