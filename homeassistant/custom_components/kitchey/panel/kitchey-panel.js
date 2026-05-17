@@ -398,7 +398,7 @@
         const name = item.name || item.product_name || item.custom_name || 'Ukendt';
         return `<div class="row clickable" data-inv-id="${esc(item.id)}">
           <div class="info"><div class="name">${esc(name)}</div></div>
-          <span class="badge badge-grey">${item.quantity ?? 0} ${esc(item.unit || 'stk')}</span>
+          <span class="badge badge-grey">${item.quantity ?? 0} stk</span>
           ${expiryBadge(item.expiry_date)}
           <span class="chevron">›</span>
         </div>`;
@@ -683,7 +683,9 @@
     _htmlDrawer() {
       const item = this._drawerItem;
       const name = item.name || item.product_name || item.custom_name || 'Ukendt';
-      const locs = this._locations.filter(l => l.storage_unit_id === item.storage_unit_id);
+      const unitId = item.storage_unit_id ||
+        this._storageUnits.find(u => u.list_type === item.list_type)?.id;
+      const locs = this._locations.filter(l => l.storage_unit_id === unitId);
       const locOptions = [
         `<option value="">Ingen hylde</option>`,
         ...locs.map(l =>
