@@ -77,8 +77,9 @@
 
       // UI state
       this._drawerItem    = null;
-      this._scanProduct   = null;
-      this._addInvProduct = null;
+      this._addModal      = null; // { step:'search'|'new'|'confirm', form:{...}, search:'', error:null, saving:false }
+      this._drawerOpened  = false;
+      this._drawerOpenedAt = '';
       this._searchLager   = '';
       this._filterUnit    = 'all';
       this._searchShop    = '';
@@ -229,10 +230,52 @@
     async _handleBarcode(code) {
       try {
         const r = await this._api('GET', `/api/barcode/${encodeURIComponent(code)}`);
-        this._scanProduct = r?.product || { name: code, id: null };
+        const product = r?.product;
+        if (r?.source === 'local' && product) {
+          // Found in local catalog → skip to confirm step
+          this._openAddModal('confirm', this._formFromProduct(product, code));
+        } else if (product) {
+          // Found via external barcode API → pre-fill new product form
+          this._openAddModal('new', this._formFromProduct(product, code));
+        } else {
+          // Not found → open new product with barcode pre-filled
+          this._openAddModal('new', { ...this._emptyForm(), barcode: code });
+        }
       } catch {
-        this._scanProduct = { name: code, id: null };
+        this._openAddModal('new', { ...this._emptyForm(), barcode: code });
       }
+    }
+
+    _emptyForm() {
+      return {
+        product_id: null, name: '', brand: '', barcode: '',
+        unit: 'stk', weight_per_unit: '', category: 'pantry',
+        quantity: 1, location_id: '',
+        expiry_date: '', date_added: new Date().toISOString().slice(0, 10),
+        opened: false, notes: '',
+      };
+    }
+
+    _formFromProduct(p, barcode = '') {
+      return {
+        product_id: p.id || null,
+        name: p.name || '',
+        brand: p.brand || '',
+        barcode: p.barcode || barcode,
+        unit: p.unit || 'stk',
+        weight_per_unit: p.weight_per_unit || '',
+        category: p.category || 'pantry',
+        quantity: 1,
+        location_id: p.default_location_id || '',
+        expiry_date: '',
+        date_added: new Date().toISOString().slice(0, 10),
+        opened: false,
+        notes: '',
+      };
+    }
+
+    _openAddModal(step = 'search', form = null) {
+      this._addModal = { step, form: form || this._emptyForm(), search: '', error: null, saving: false };
       this._render();
     }
 
@@ -290,12 +333,24 @@
         .drawer-handle { width:36px; height:4px; background:#e0e0e0; border-radius:2px; margin:0 auto 16px; }
         .drawer-title { font-size:17px; font-weight:700; margin-bottom:16px; }
         .drawer-actions { display:flex; gap:8px; margin-top:16px; flex-wrap:wrap; }
-        /* Scan overlay */
-        .scan-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:flex; align-items:center; justify-content:center; padding:20px; }
-        .scan-card { background:#fff; border-radius:16px; padding:24px; max-width:400px; width:100%; }
-        .scan-title { font-size:18px; font-weight:700; margin-bottom:4px; }
-        .scan-sub { font-size:13px; color:#888; margin-bottom:20px; }
-        .scan-actions { display:flex; flex-direction:column; gap:8px; }
+        /* Add modal */
+        .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.5); z-index:200; display:flex; align-items:flex-end; justify-content:center; }
+        .modal-sheet { background:#fff; border-radius:16px 16px 0 0; width:100%; max-width:640px; max-height:92vh; display:flex; flex-direction:column; }
+        .modal-hdr { padding:12px 16px; border-bottom:1px solid #f0f0f0; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+        .modal-title { font-size:16px; font-weight:700; }
+        .modal-body { padding:16px; overflow-y:auto; flex:1; display:flex; flex-direction:column; gap:14px; }
+        .modal-handle { width:36px; height:4px; background:#e0e0e0; border-radius:2px; margin:10px auto 0; }
+        .cat-row { display:flex; align-items:center; gap:10px; padding:10px 12px; border:1px solid #f0f0f0; border-radius:10px; cursor:pointer; }
+        .cat-row:hover { background:${BG}; }
+        .cat-thumb { width:42px; height:42px; border-radius:8px; background:${BG}; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; overflow:hidden; }
+        .cat-thumb img { width:100%; height:100%; object-fit:cover; }
+        /* Stepper */
+        .stepper { display:flex; align-items:center; gap:8px; }
+        .step-btn { width:40px; height:40px; border:1px solid #e0e0e0; border-radius:8px; background:#fafafa; font-size:20px; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .step-btn:hover { background:${BG}; }
+        /* Opened toggle button */
+        .opened-btn { width:100%; padding:10px; border-radius:8px; border:1px solid #e0e0e0; background:#fafafa; font-size:13px; cursor:pointer; text-align:left; transition:background .15s; }
+        .opened-btn.on { background:rgba(255,165,0,.08); border-color:#ff9800; color:#e65100; }
         /* Shopping */
         .shop-row { display:flex; align-items:center; gap:10px; padding:10px 8px; border-radius:8px; }
         .check-circle { width:24px; height:24px; border-radius:50%; border:2px solid #ddd; cursor:pointer; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
@@ -358,8 +413,8 @@
       const globalErr = this._errors.global
         ? `<div class="error-banner">${esc(this._errors.global)}</div>` : '';
 
-      const drawer = this._drawerItem  ? this._htmlDrawer()  : '';
-      const scan   = this._scanProduct ? this._htmlScan()    : '';
+      const drawer   = this._drawerItem ? this._htmlDrawer()   : '';
+      const addModal = this._addModal   ? this._htmlAddModal() : '';
 
       this.shadowRoot.innerHTML = `
         <style>${this._css()}</style>
@@ -369,7 +424,7 @@
           ${content}
         </div>
         ${drawer}
-        ${scan}`;
+        ${addModal}`;
 
       this._attachListeners();
     }
@@ -396,8 +451,15 @@
 
       const itemRow = (item) => {
         const name = item.name || item.product_name || item.custom_name || 'Ukendt';
+        const subParts = [
+          item.brand || null,
+          item.weight_per_unit ? `${item.weight_per_unit}${item.unit && item.unit !== 'stk' ? item.unit : 'g'}` : null,
+          (item.location_name || this._locations.find(l => l.id === item.location_id)?.name)
+            ? `📍 ${item.location_name || this._locations.find(l => l.id === item.location_id)?.name}` : null,
+        ].filter(Boolean);
+        const sub = subParts.length ? `<div class="sub">${esc(subParts.join(' · '))}</div>` : '';
         return `<div class="row clickable" data-inv-id="${esc(item.id)}">
-          <div class="info"><div class="name">${esc(name)}</div></div>
+          <div class="info"><div class="name">${esc(name)}</div>${sub}</div>
           <span class="badge badge-grey">${item.quantity ?? 0} stk</span>
           ${expiryBadge(item.expiry_date)}
           <span class="chevron">›</span>
@@ -451,6 +513,9 @@
 
       return `
         <div class="card">
+          <div class="card-hdr">Lager
+            <button class="btn btn-primary" id="lager-add-btn" style="padding:6px 14px;font-size:13px">+ Tilføj vare</button>
+          </div>
           <div class="srch"><input class="srch-input" id="lager-search" placeholder="Søg lagervare…" value="${esc(this._searchLager)}"/></div>
           <div class="filters">${catBtns}</div>
           <div class="list">${anyItems ? sections : '<div class="empty">Ingen varer fundet</div>'}</div>
@@ -681,18 +746,25 @@
     // ── Drawer (inventory item edit) ──────────────────────────────────────────
 
     _htmlDrawer() {
-      const item = this._drawerItem;
-      const name = item.name || item.product_name || item.custom_name || 'Ukendt';
-      const unitId = item.storage_unit_id ||
-        this._storageUnits.find(u => u.list_type === item.list_type)?.id;
-      const locs = this._locations.filter(l => l.storage_unit_id === unitId);
-      const locOptions = [
-        `<option value="">Ingen hylde</option>`,
-        ...locs.map(l =>
-          `<option value="${esc(l.id)}" ${l.id === item.location_id ? 'selected' : ''}>${esc(l.name)}</option>`
-        ),
-      ].join('');
+      const item   = this._drawerItem;
+      const name   = item.name || item.product_name || item.custom_name || 'Ukendt';
+      const brand  = item.brand ? `<div style="font-size:13px;color:#888;margin-top:2px">${esc(item.brand)}</div>` : '';
       const expiry = item.expiry_date ? item.expiry_date.slice(0, 10) : '';
+      const opened = this._drawerOpened;
+      const openedAt = this._drawerOpenedAt;
+      const dateAdded = item.date_added ? new Date(item.date_added).toLocaleDateString('da-DK') : null;
+
+      // Location options grouped by storage unit (matching item's list_type)
+      const relevantUnits = this._storageUnits.filter(u => u.list_type === item.list_type);
+      const locOptgroups = relevantUnits.map(unit => {
+        const unitLocs = this._locations.filter(l => l.storage_unit_id === unit.id);
+        if (!unitLocs.length) return '';
+        return `<optgroup label="${esc(unit.name)}">${unitLocs.map(l =>
+          `<option value="${esc(l.id)}" ${l.id === item.location_id ? 'selected' : ''}>${esc(l.name)}</option>`
+        ).join('')}</optgroup>`;
+      }).join('');
+      const locOptions = `<option value="">Ingen placering</option>${locOptgroups}`;
+
       const drawerErr = this._errors.drawer
         ? `<div class="error-banner" style="margin-top:12px">${esc(this._errors.drawer)}</div>` : '';
 
@@ -700,16 +772,41 @@
         <div class="drawer-overlay" id="drawer-overlay">
           <div class="drawer">
             <div class="drawer-handle"></div>
-            <div class="drawer-title">${esc(name)}</div>
+            <div class="drawer-title">${esc(name)}${brand}</div>
+
             <div class="frow"><label class="lbl">Antal</label>
-              <input class="inp" id="drawer-qty" type="number" min="0" value="${item.quantity ?? 1}"/></div>
+              <div class="stepper">
+                <button class="step-btn" id="drawer-qty-minus">−</button>
+                <input class="inp" id="drawer-qty" type="number" min="0" value="${item.quantity ?? 1}" style="text-align:center;flex:1"/>
+                <button class="step-btn" id="drawer-qty-plus">+</button>
+              </div>
+            </div>
+
+            <div class="frow"><label class="lbl">Placering (hylde)</label>
+              <select class="inp" id="drawer-loc">${locOptions}</select></div>
+
             <div class="frow"><label class="lbl">Udløbsdato</label>
               <input class="inp" id="drawer-expiry" type="date" value="${esc(expiry)}"/></div>
-            <div class="frow"><label class="lbl">Lokation (hylde)</label>
-              <select class="inp" id="drawer-loc">${locOptions}</select></div>
+
+            ${dateAdded ? `<div class="frow"><label class="lbl">Lagt ind</label>
+              <input class="inp" value="${esc(dateAdded)}" readonly style="color:#aaa"/></div>` : ''}
+
+            <div class="frow"><label class="lbl">Status</label>
+              <button class="opened-btn${opened ? ' on' : ''}" id="drawer-opened">
+                ${opened ? `🔓 Åben${openedAt ? ` siden ${openedAt}` : ''}` : '🔒 Ikke åbnet — klik for at markere som åben'}
+              </button>
+            </div>
+
+            ${opened ? `<div class="frow"><label class="lbl">Åbnet dato</label>
+              <input class="inp" id="drawer-opened-at" type="date" value="${esc(openedAt)}"/></div>` : ''}
+
+            <div class="frow"><label class="lbl">Noter</label>
+              <input class="inp" id="drawer-notes" placeholder="fx Købt i Netto" value="${esc(item.notes || '')}"/></div>
+
             <div class="drawer-actions">
               <button class="btn btn-primary" id="drawer-save">Gem</button>
               <button class="btn btn-danger"  id="drawer-use">Brug 1</button>
+              <button class="btn" style="background:#fff;color:#f44336;border:1px solid #f44336" id="drawer-delete">Slet</button>
               <button class="btn btn-ghost"   id="drawer-close">Luk</button>
             </div>
             ${drawerErr}
@@ -717,23 +814,129 @@
         </div>`;
     }
 
-    // ── Scan overlay ──────────────────────────────────────────────────────────
+    // ── Add-to-inventory modal (3 steps) ─────────────────────────────────────
 
-    _htmlScan() {
-      const p = this._scanProduct;
-      const name = p.name || 'Ukendt produkt';
-      const sub  = p.brand ? `${esc(name)} · ${esc(p.brand)}` : esc(name);
-      const canAddInv = !!p.id;
-      return `
-        <div class="scan-overlay">
-          <div class="scan-card">
-            <div class="scan-title">📷 Stregkode scannet</div>
-            <div class="scan-sub">${sub}</div>
-            <div class="scan-actions">
-              ${canAddInv ? `<button class="btn btn-primary" id="scan-add-inv" style="width:100%">Tilføj til lager</button>` : ''}
-              <button class="btn btn-ghost" id="scan-add-shop" style="width:100%">Tilføj til indkøbsliste</button>
-              <button class="btn btn-ghost" id="scan-dismiss" style="width:100%">Afvis</button>
+    _htmlAddModal() {
+      const m    = this._addModal;
+      const step = m.step;
+      const f    = m.form;
+      const q    = (m.search || '').toLowerCase();
+
+      const titles = { search: 'Tilføj vare', new: 'Nyt produkt', confirm: 'Tilføj til lager' };
+      const backBtn = step !== 'search'
+        ? `<button class="btn btn-ghost" id="modal-back" style="padding:6px 10px;font-size:13px">← Tilbage</button>` : '';
+      const errBanner = m.error
+        ? `<div class="error-banner">${esc(m.error)}</div>` : '';
+
+      let body = '';
+
+      // ── Step: search ────────────────────────────────────────────────────────
+      if (step === 'search') {
+        const filtered = this._catalog.filter(p => {
+          const n = (p.name || '').toLowerCase();
+          const b = (p.brand || '').toLowerCase();
+          const bc = (p.barcode || '').toLowerCase();
+          return !q || n.includes(q) || b.includes(q) || bc.includes(q);
+        }).slice(0, 40);
+
+        const catRows = filtered.map(p => {
+          const wgt = p.weight_per_unit ? ` · ${p.weight_per_unit}${p.unit && p.unit !== 'stk' ? p.unit : 'g'}` : '';
+          const sub2 = [p.brand, wgt ? wgt.slice(3) : null].filter(Boolean).join(' · ');
+          const stock = p.in_stock > 0 ? `<span class="badge badge-ok" style="flex-shrink:0">${p.in_stock} stk</span>` : '';
+          return `<div class="cat-row" data-modal-pick="${esc(p.id)}">
+            <div class="cat-thumb">${p.thumbnail ? `<img src="${esc(p.thumbnail)}" alt=""/>` : (CATEGORY_ICONS[p.category] || '📦')}</div>
+            <div class="info"><div class="name" style="font-size:14px">${esc(p.name)}</div>${sub2 ? `<div class="sub">${esc(sub2)}</div>` : ''}</div>
+            ${stock}
+          </div>`;
+        }).join('');
+
+        const newBtn = q
+          ? `<button class="btn btn-ghost" id="modal-create-new" style="width:100%;justify-content:center">+ Opret "${esc(q)}" som nyt produkt</button>` : '';
+
+        body = `
+          <button class="btn btn-primary" id="modal-scan-barcode" style="width:100%;justify-content:center">📷 Scan stregkode</button>
+          <input class="srch-input" id="modal-search" placeholder="Søg produktnavn eller stregkode…" value="${esc(m.search || '')}"/>
+          ${newBtn}
+          <div style="display:flex;flex-direction:column;gap:6px">${catRows || (q ? '<div class="empty">Ingen produkter fundet</div>' : '')}</div>`;
+      }
+
+      // ── Step: new product ───────────────────────────────────────────────────
+      if (step === 'new') {
+        const unitOpts = ['stk','g','kg','ml','l','pk','bk','pose','bakke','flaske','dåse']
+          .map(u => `<option value="${u}" ${f.unit === u ? 'selected' : ''}>${u}</option>`).join('');
+        body = `
+          <div class="frow"><label class="lbl">Navn *</label>
+            <input class="inp" id="modal-name" placeholder="fx Hakket oksekød" value="${esc(f.name)}"/></div>
+          <div class="frow"><label class="lbl">Mærke</label>
+            <input class="inp" id="modal-brand" placeholder="fx Netto" value="${esc(f.brand)}"/></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="frow"><label class="lbl">Enhed</label>
+              <select class="inp" id="modal-unit">${unitOpts}</select></div>
+            <div class="frow"><label class="lbl">Størrelse</label>
+              <input class="inp" id="modal-wpu" type="number" placeholder="fx 500" value="${esc(f.weight_per_unit)}"/></div>
+          </div>
+          <div class="frow"><label class="lbl">Stregkode</label>
+            <input class="inp" id="modal-barcode" placeholder="EAN / stregkode" value="${esc(f.barcode)}"/></div>
+          ${errBanner}
+          <button class="btn btn-primary" id="modal-to-confirm" style="width:100%;justify-content:center" ${f.name ? '' : 'disabled'}>Fortsæt →</button>`;
+      }
+
+      // ── Step: confirm ───────────────────────────────────────────────────────
+      if (step === 'confirm') {
+        // Location optgroups grouped by unit
+        const locOptgroups = this._storageUnits.map(unit => {
+          const unitLocs = this._locations.filter(l => l.storage_unit_id === unit.id);
+          if (!unitLocs.length) return '';
+          return `<optgroup label="${esc(unit.name)} (${CATEGORY_LABELS[unit.list_type] || unit.list_type})">${
+            unitLocs.map(l => `<option value="${esc(l.id)}" ${l.id === f.location_id ? 'selected' : ''}>${esc(l.name)}</option>`).join('')
+          }</optgroup>`;
+        }).join('');
+        const locOptions = `<option value="">Ingen placering</option>${locOptgroups}`;
+
+        const productCard = `<div style="background:${BG};border-radius:8px;padding:10px 12px">
+          <div style="font-weight:600;font-size:14px">${esc(f.name)}</div>
+          ${f.brand ? `<div style="font-size:12px;color:#888">${esc(f.brand)}</div>` : ''}
+        </div>`;
+
+        body = `
+          ${productCard}
+          <div class="frow"><label class="lbl">Antal</label>
+            <div class="stepper">
+              <button class="step-btn" id="modal-qty-minus">−</button>
+              <input class="inp" id="modal-qty" type="number" min="1" value="${f.quantity}" style="text-align:center;flex:1"/>
+              <button class="step-btn" id="modal-qty-plus">+</button>
             </div>
+          </div>
+          <div class="frow"><label class="lbl">Placering</label>
+            <select class="inp" id="modal-loc">${locOptions}</select></div>
+          <div class="frow"><label class="lbl">Udløbsdato</label>
+            <input class="inp" id="modal-expiry" type="date" value="${esc(f.expiry_date)}"/></div>
+          <div class="frow"><label class="lbl">Dato lagt ind</label>
+            <input class="inp" id="modal-date-added" type="date" value="${esc(f.date_added)}"/></div>
+          <div class="frow"><label class="lbl">Status</label>
+            <button class="opened-btn${f.opened ? ' on' : ''}" id="modal-opened">
+              ${f.opened ? '🔓 Åben' : '🔒 Ikke åbnet'}
+            </button>
+          </div>
+          ${f.opened ? `<div class="frow"><label class="lbl">Åbnet dato</label>
+            <input class="inp" id="modal-opened-at" type="date" value="${esc(f.opened_at || f.date_added)}"/></div>` : ''}
+          <div class="frow"><label class="lbl">Noter</label>
+            <input class="inp" id="modal-notes" placeholder="fx Købt i Netto" value="${esc(f.notes)}"/></div>
+          ${errBanner}
+          <button class="btn btn-primary" id="modal-save" style="width:100%;justify-content:center" ${m.saving ? 'disabled' : ''}>
+            ${m.saving ? '⏳ Gemmer…' : '✓ Tilføj til lager'}
+          </button>`;
+      }
+
+      return `
+        <div class="modal-overlay" id="modal-overlay">
+          <div class="modal-sheet">
+            <div class="modal-handle"></div>
+            <div class="modal-hdr">
+              <div style="display:flex;align-items:center;gap:8px">${backBtn}<span class="modal-title">${titles[step]}</span></div>
+              <button class="btn btn-ghost" id="modal-close" style="padding:6px 10px;font-size:18px">×</button>
+            </div>
+            <div class="modal-body">${body}</div>
           </div>
         </div>`;
     }
@@ -755,6 +958,9 @@
       });
 
       // ── Lager
+      root.querySelector('#lager-add-btn')?.addEventListener('click', () => {
+        this._openAddModal('search');
+      });
       root.querySelector('#lager-search')?.addEventListener('input', e => {
         this._searchLager = e.target.value;
         this._render();
@@ -764,7 +970,10 @@
       );
       root.querySelectorAll('[data-inv-id]').forEach(row =>
         row.addEventListener('click', () => {
-          this._drawerItem = this._inventory.find(i => i.id === row.dataset.invId) || null;
+          const item = this._inventory.find(i => i.id === row.dataset.invId) || null;
+          this._drawerItem   = item;
+          this._drawerOpened = !!(item?.opened);
+          this._drawerOpenedAt = item?.opened_at ? item.opened_at.slice(0, 10) : '';
           delete this._errors.drawer;
           this._render();
         })
@@ -777,16 +986,37 @@
       root.querySelector('#drawer-close')?.addEventListener('click', () => {
         this._drawerItem = null; this._render();
       });
+      root.querySelector('#drawer-qty-minus')?.addEventListener('click', () => {
+        const inp = root.querySelector('#drawer-qty');
+        if (inp) inp.value = Math.max(0, (parseInt(inp.value) || 0) - 1);
+      });
+      root.querySelector('#drawer-qty-plus')?.addEventListener('click', () => {
+        const inp = root.querySelector('#drawer-qty');
+        if (inp) inp.value = (parseInt(inp.value) || 0) + 1;
+      });
+      root.querySelector('#drawer-opened')?.addEventListener('click', () => {
+        const item = this._drawerItem;
+        this._drawerOpened = !this._drawerOpened;
+        if (this._drawerOpened && !this._drawerOpenedAt)
+          this._drawerOpenedAt = new Date().toISOString().slice(0, 10);
+        if (!this._drawerOpened) this._drawerOpenedAt = '';
+        this._render();
+      });
       root.querySelector('#drawer-save')?.addEventListener('click', async () => {
-        const item   = this._drawerItem;
-        const qty    = parseInt(root.querySelector('#drawer-qty')?.value)    || 0;
-        const expiry = root.querySelector('#drawer-expiry')?.value           || null;
-        const locId  = root.querySelector('#drawer-loc')?.value             || null;
+        const item      = this._drawerItem;
+        const qty       = parseInt(root.querySelector('#drawer-qty')?.value) || 0;
+        const expiry    = root.querySelector('#drawer-expiry')?.value || null;
+        const locId     = root.querySelector('#drawer-loc')?.value || null;
+        const notes     = root.querySelector('#drawer-notes')?.value || null;
+        const openedAt  = root.querySelector('#drawer-opened-at')?.value || null;
         try {
           await this._api('PUT', `/api/inventory/${item.id}`, {
             quantity:    qty,
-            expiry_date: expiry  || null,
-            location_id: locId  || null,
+            expiry_date: expiry || null,
+            location_id: locId || null,
+            notes:       notes || null,
+            opened:      this._drawerOpened ? 1 : 0,
+            opened_at:   this._drawerOpened ? (openedAt || this._drawerOpenedAt || null) : null,
           });
           this._drawerItem = null;
           await this._fetchAll();
@@ -797,6 +1027,16 @@
         const item = this._drawerItem;
         try {
           await this._api('POST', `/api/inventory/${item.id}/use`, { amount: 1 });
+          this._drawerItem = null;
+          await this._fetchAll();
+          this._render();
+        } catch (e) { this._errors.drawer = e.message; this._render(); }
+      });
+      root.querySelector('#drawer-delete')?.addEventListener('click', async () => {
+        const item = this._drawerItem;
+        if (!confirm(`Slet "${item.name || 'vare'}" fra lager?`)) return;
+        try {
+          await this._api('DELETE', `/api/inventory/${item.id}`);
           this._drawerItem = null;
           await this._fetchAll();
           this._render();
@@ -875,7 +1115,7 @@
       root.querySelectorAll('[data-cat-id]').forEach(row =>
         row.addEventListener('click', () => {
           const p = this._catalog.find(p => p.id === row.dataset.catId);
-          if (p) this._openAddToInventory(p);
+          if (p) this._openAddModal('confirm', this._formFromProduct(p));
         })
       );
 
@@ -960,91 +1200,142 @@
         } catch (e) { this._errors.settings = e.message; this._render(); }
       });
 
-      // ── Scan overlay
-      root.querySelector('#scan-dismiss')?.addEventListener('click', () => {
-        this._scanProduct = null; this._render();
+      // ── Add modal
+      root.querySelector('#modal-overlay')?.addEventListener('click', e => {
+        if (e.target.id === 'modal-overlay') { this._addModal = null; this._render(); }
       });
-      root.querySelector('#scan-add-shop')?.addEventListener('click', async () => {
-        const p = this._scanProduct;
-        this._scanProduct = null;
-        try {
-          await this._api('POST', '/api/shopping', { custom_name: p.name || 'Ukendt', quantity: 1, unit: 'stk' });
-          await this._fetchAll();
-        } catch { /* best-effort */ }
+      root.querySelector('#modal-close')?.addEventListener('click', () => {
+        this._addModal = null; this._render();
+      });
+      root.querySelector('#modal-back')?.addEventListener('click', () => {
+        const step = this._addModal?.step;
+        this._addModal = { ...this._addModal, step: step === 'confirm' ? 'new' : 'search', error: null };
         this._render();
       });
-      root.querySelector('#scan-add-inv')?.addEventListener('click', () => {
-        const p = this._scanProduct;
-        this._scanProduct = null;
+
+      // Step: search
+      root.querySelector('#modal-search')?.addEventListener('input', e => {
+        this._addModal = { ...this._addModal, search: e.target.value };
         this._render();
-        this._openAddToInventory(p);
       });
-    }
+      root.querySelector('#modal-scan-barcode')?.addEventListener('click', () => {
+        // Trigger barcode simulation prompt (HID scanner will trigger _onKeydown naturally)
+        // For manual entry provide a prompt as fallback
+        const code = prompt('Indtast stregkode manuelt (eller brug HID-scanner):');
+        if (code && code.length >= 4) { this._addModal = null; this._handleBarcode(code.trim()); }
+      });
+      root.querySelector('#modal-create-new')?.addEventListener('click', () => {
+        const q = this._addModal?.search || '';
+        this._addModal = { ...this._addModal, step: 'new', form: { ...this._emptyForm(), name: q }, error: null };
+        this._render();
+      });
+      root.querySelectorAll('[data-modal-pick]').forEach(el =>
+        el.addEventListener('click', () => {
+          const p = this._catalog.find(p => p.id === el.dataset.modalPick);
+          if (p) {
+            this._addModal = { ...this._addModal, step: 'confirm', form: this._formFromProduct(p), error: null };
+            this._render();
+          }
+        })
+      );
 
-    // ── Add-to-inventory dialog (catalog / scan) ──────────────────────────────
+      // Step: new product
+      root.querySelector('#modal-to-confirm')?.addEventListener('click', () => {
+        const name = root.querySelector('#modal-name')?.value.trim();
+        if (!name) return;
+        this._addModal = {
+          ...this._addModal,
+          step: 'confirm',
+          error: null,
+          form: {
+            ...this._addModal.form,
+            name,
+            brand:          root.querySelector('#modal-brand')?.value.trim() || '',
+            unit:           root.querySelector('#modal-unit')?.value || 'stk',
+            weight_per_unit: root.querySelector('#modal-wpu')?.value || '',
+            barcode:        root.querySelector('#modal-barcode')?.value.trim() || '',
+          },
+        };
+        this._render();
+      });
+      // Live-update name field validity so Fortsæt button enables
+      root.querySelector('#modal-name')?.addEventListener('input', e => {
+        const btn = root.querySelector('#modal-to-confirm');
+        if (btn) btn.disabled = !e.target.value.trim();
+      });
 
-    _openAddToInventory(product) {
-      // Use a document-level overlay (outside shadow DOM) so it sits above everything.
-      const existing = document.getElementById('kitchey-add-inv-overlay');
-      if (existing) existing.remove();
+      // Step: confirm
+      root.querySelector('#modal-qty-minus')?.addEventListener('click', () => {
+        const inp = root.querySelector('#modal-qty');
+        if (inp) { inp.value = Math.max(1, (parseInt(inp.value) || 1) - 1); }
+      });
+      root.querySelector('#modal-qty-plus')?.addEventListener('click', () => {
+        const inp = root.querySelector('#modal-qty');
+        if (inp) { inp.value = (parseInt(inp.value) || 1) + 1; }
+      });
+      root.querySelector('#modal-opened')?.addEventListener('click', () => {
+        const f = this._addModal.form;
+        const nowOpen = !f.opened;
+        this._addModal = {
+          ...this._addModal,
+          form: { ...f, opened: nowOpen, opened_at: nowOpen ? (f.date_added || new Date().toISOString().slice(0, 10)) : '' },
+        };
+        this._render();
+      });
+      root.querySelector('#modal-save')?.addEventListener('click', async () => {
+        const f    = this._addModal.form;
+        const qty  = parseInt(root.querySelector('#modal-qty')?.value) || 1;
+        const locId = root.querySelector('#modal-loc')?.value || null;
+        const expiry = root.querySelector('#modal-expiry')?.value || null;
+        const dateAdded = root.querySelector('#modal-date-added')?.value || null;
+        const openedAt = root.querySelector('#modal-opened-at')?.value || null;
+        const notes = root.querySelector('#modal-notes')?.value || null;
 
-      const defaultType = product.category || 'pantry';
-      const unitOpts = this._storageUnits.map(u =>
-        `<option value="${u.list_type}" ${u.list_type === defaultType ? 'selected' : ''}>${u.name} (${CATEGORY_LABELS[u.list_type] || u.list_type})</option>`
-      ).join('');
-
-      const overlay = document.createElement('div');
-      overlay.id = 'kitchey-add-inv-overlay';
-      overlay.style.cssText = `position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif`;
-
-      overlay.innerHTML = `
-        <div style="background:#fff;border-radius:16px;padding:24px;max-width:400px;width:100%;box-sizing:border-box">
-          <div style="font-size:17px;font-weight:700;margin-bottom:16px">Tilføj til lager: ${esc(product.name || 'Ukendt')}</div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:12px;font-weight:600;color:#666;display:block;margin-bottom:4px">Antal</label>
-            <input id="_ainv_qty" type="number" min="1" value="1" style="width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box"/>
-          </div>
-          <div style="margin-bottom:12px">
-            <label style="font-size:12px;font-weight:600;color:#666;display:block;margin-bottom:4px">Lagertype</label>
-            <select id="_ainv_type" style="width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;background:#fff;box-sizing:border-box">${unitOpts}</select>
-          </div>
-          <div style="margin-bottom:16px">
-            <label style="font-size:12px;font-weight:600;color:#666;display:block;margin-bottom:4px">Udløbsdato (valgfri)</label>
-            <input id="_ainv_expiry" type="date" style="width:100%;padding:9px 12px;border:1px solid #e0e0e0;border-radius:8px;font-size:14px;outline:none;box-sizing:border-box"/>
-          </div>
-          <div id="_ainv_err" style="color:#c62828;font-size:13px;margin-bottom:8px;display:none"></div>
-          <div style="display:flex;gap:8px">
-            <button id="_ainv_save" style="flex:1;padding:10px;background:${GREEN};color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer">Tilføj</button>
-            <button id="_ainv_cancel" style="padding:10px 16px;background:#f0f0f0;border:none;border-radius:8px;font-size:14px;cursor:pointer">Annuller</button>
-          </div>
-        </div>`;
-
-      const close = () => overlay.remove();
-      overlay.addEventListener('click', e => { if (e.target === overlay) close(); });
-      overlay.querySelector('#_ainv_cancel').addEventListener('click', close);
-      overlay.querySelector('#_ainv_save').addEventListener('click', async () => {
-        const qty    = parseInt(overlay.querySelector('#_ainv_qty').value)    || 1;
-        const type   = overlay.querySelector('#_ainv_type').value;
-        const expiry = overlay.querySelector('#_ainv_expiry').value           || null;
-        const errEl  = overlay.querySelector('#_ainv_err');
+        this._addModal = { ...this._addModal, saving: true, error: null };
+        this._render();
         try {
+          let productId = f.product_id;
+          if (!productId) {
+            // Need to create catalog product first
+            const newProd = await this._api('POST', '/api/catalog', {
+              name:            f.name,
+              brand:           f.brand || null,
+              barcode:         f.barcode || null,
+              category:        locId
+                ? (this._storageUnits.find(u => this._locations.find(l => l.id === locId && l.storage_unit_id === u.id))?.list_type || f.category)
+                : f.category,
+              unit:            f.unit || 'stk',
+              weight_per_unit: f.weight_per_unit ? parseFloat(f.weight_per_unit) : null,
+            });
+            productId = newProd.id;
+          }
+          // Determine list_type from selected location → unit, else product category
+          const selectedUnit = locId
+            ? this._storageUnits.find(u => this._locations.find(l => l.id === locId && l.storage_unit_id === u.id))
+            : null;
+          const listType = selectedUnit?.list_type || f.category || 'pantry';
+
           await this._api('POST', '/api/inventory', {
-            product_id:  product.id,
+            product_id:  productId,
             quantity:    qty,
-            list_type:   type,
+            list_type:   listType,
+            location_id: locId || null,
             expiry_date: expiry || null,
+            date_added:  dateAdded || null,
+            notes:       notes || null,
+            opened:      f.opened ? 1 : 0,
+            opened_at:   f.opened ? (openedAt || null) : null,
           });
-          close();
+          this._addModal = null;
           await this._fetchAll();
           this._render();
         } catch (e) {
-          errEl.textContent = e.message;
-          errEl.style.display = 'block';
+          this._addModal = { ...this._addModal, saving: false, error: e.message };
+          this._render();
         }
       });
-
-      document.body.appendChild(overlay);
     }
+
   }
 
   if (!customElements.get('kitchey-panel')) {
