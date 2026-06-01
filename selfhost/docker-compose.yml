@@ -1,0 +1,58 @@
+version: '3.9'
+
+# Kitchey — Self-hosted installation
+#
+# Kom i gang:
+#   1. Kopiér .env.example til .env og udfyld variablerne
+#   2. docker compose up -d
+#
+# Opdatering til nyeste version:
+#   docker compose pull && docker compose up -d
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: kitchey-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: kitchey
+      POSTGRES_USER: kitcheyuser
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD mangler i .env}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U kitcheyuser -d kitchey"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    image: ghcr.io/zeppdk/kitchey:latest
+    container_name: kitchey-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://kitcheyuser:${DB_PASSWORD}@db:5432/kitchey
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET mangler i .env}
+      APP_URL: ${APP_URL:?APP_URL mangler i .env}
+      SELF_HOSTED: "true"
+      UPLOADS_DIR: /uploads
+      TZ: Europe/Copenhagen
+    volumes:
+      - ./uploads:/uploads
+    ports:
+      - "${PORT:-3035}:3000"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+volumes:
+  pgdata:
