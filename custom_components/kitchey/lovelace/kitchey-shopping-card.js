@@ -236,9 +236,17 @@ class KitcheyShoppingCard extends HTMLElement {
   }
 }
 
-if (!customElements.get('kitchey-shopping-card')) {
-  customElements.define('kitchey-shopping-card', KitcheyShoppingCard);
-}
+// HA 2026.8+ swaps window.customElements for a scoped-registry polyfill while
+// extra modules may already have run. A define() on the native registry is
+// then invisible to Lovelace ("Custom element doesn't exist"). Define once
+// <home-assistant> exists, on whichever registry is current at that point.
+// Also fine on older HA (no polyfill).
+window.customElements.whenDefined('home-assistant').then(() => {
+  const registry = window.customElements;
+  if (!registry.get('kitchey-shopping-card')) {
+    registry.define('kitchey-shopping-card', KitcheyShoppingCard);
+  }
+});
 window.customCards = window.customCards || [];
 window.customCards.push({
   type: 'kitchey-shopping-card',
