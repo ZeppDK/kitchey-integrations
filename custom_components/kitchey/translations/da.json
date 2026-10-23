@@ -14,6 +14,14 @@
         "data": {
           "household_id": "Husstand"
         }
+      },
+      "reconfigure": {
+        "title": "Opdatér Kitchey-forbindelse",
+        "description": "Ret server-URL og/eller Personal Access Token. Du vælger husstand i næste trin.",
+        "data": {
+          "server_url": "Server-URL",
+          "token": "Personal Access Token (ft_live_...)"
+        }
       }
     },
     "error": {
@@ -21,7 +29,8 @@
       "invalid_token": "Token afvist af serveren. Opret et nyt token i Kitchey-appen."
     },
     "abort": {
-      "already_configured": "Denne husstand er allerede konfigureret."
+      "already_configured": "Denne husstand er allerede konfigureret.",
+      "reconfigure_successful": "Forbindelsen er opdateret."
     }
   }
 }

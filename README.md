@@ -52,6 +52,8 @@ Copy `custom_components/kitchey/` into your HA `config/custom_components/` folde
 3. Select your household
 4. Done — sensors, dashboard cards, and the sidebar panel are ready immediately
 
+To change the server URL, token or household later: Settings → Devices & Services → Kitchey → ⋮ → **Reconfigure** (no need to delete and re-add).
+
 ### Sidebar Panel
 
 After setup a **Kitchey** entry appears in the HA sidebar (fridge icon). It opens a full management panel with four tabs:
