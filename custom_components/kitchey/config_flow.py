@@ -61,11 +61,13 @@ class KitcheyConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 self._households = households
                 return await self.async_step_household()
 
+        # On error, keep what the user typed instead of resetting to the stored values
+        defaults = user_input or entry.data
         return self.async_show_form(
             step_id="reconfigure",
             data_schema=vol.Schema({
-                vol.Required(CONF_SERVER_URL, default=entry.data[CONF_SERVER_URL]): str,
-                vol.Required(CONF_TOKEN, default=entry.data[CONF_TOKEN]): str,
+                vol.Required(CONF_SERVER_URL, default=defaults[CONF_SERVER_URL]): str,
+                vol.Required(CONF_TOKEN, default=defaults[CONF_TOKEN]): str,
             }),
             errors=errors,
         )
