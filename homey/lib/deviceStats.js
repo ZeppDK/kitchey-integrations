@@ -37,6 +37,22 @@ async function applyInventoryStats(device, items) {
   await setIfChanged(device, 'alarm_expired', stats.expired > 0);
   await setIfChanged(device, 'kitchey_next_expiring', next);
   await setIfChanged(device, 'kitchey_latest_item', latest);
+
+  const expired = items.filter((i) => i.days_left !== null && i.days_left !== undefined && i.days_left < 0)
+    .sort((a, b) => a.days_left - b.days_left);
+  const expiring = items.filter((i) => i.days_left !== null && i.days_left !== undefined && i.days_left >= 0 && i.days_left <= 7)
+    .sort((a, b) => a.days_left - b.days_left);
+  await setIfChanged(device, 'kitchey_expired_list', nameList(expired.map((i) => i.name), none));
+  await setIfChanged(device, 'kitchey_expiring_list', nameList(expiring.map((i) => `${i.name} (${app.relativeDays(i.days_left)})`), none));
+}
+
+const MAX_NAMES = 5;
+
+/** "A, B, C (+2)" or the placeholder when empty. */
+function nameList(names, none) {
+  if (names.length === 0) return none;
+  const shown = names.slice(0, MAX_NAMES).join(', ');
+  return names.length > MAX_NAMES ? `${shown} (+${names.length - MAX_NAMES})` : shown;
 }
 
 module.exports = { setIfChanged, ensureCapabilities, applyInventoryStats };

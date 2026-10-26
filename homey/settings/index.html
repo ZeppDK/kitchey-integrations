@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Kitchey</title>
-  <script src="https://cdn.athom.com/homey-apps-sdk-v3/homey.js"></script>
+  <script type="text/javascript" src="/homey.js" data-origin="settings"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -173,7 +173,9 @@
   }
 
   function onHomeyReady(Homey) {
-    applyLanguage(Homey.getLanguage ? Homey.getLanguage() : 'en');
+    var lang = 'en';
+    try { lang = typeof Homey.getLanguage === 'function' ? Homey.getLanguage() : (navigator.language || 'en'); } catch (e) { /* keep en */ }
+    applyLanguage(String(lang).toLowerCase().indexOf('da') === 0 ? 'da' : 'en');
 
     Promise.all([
       Homey.get('server_url'),

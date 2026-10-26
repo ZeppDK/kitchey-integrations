@@ -108,6 +108,22 @@
       "uiComponent": "sensor",
       "icon": "/assets/icons/next-expiry.svg"
     },
+    "kitchey_expired_list": {
+      "type": "string",
+      "title": { "en": "Expired items", "da": "Udløbede varer" },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/expired.svg"
+    },
+    "kitchey_expiring_list": {
+      "type": "string",
+      "title": { "en": "Expiring within 7 days", "da": "Udløber inden 7 dage" },
+      "getable": true,
+      "setable": false,
+      "uiComponent": "sensor",
+      "icon": "/assets/icons/expiry.svg"
+    },
     "kitchey_latest_item": {
       "type": "string",
       "title": { "en": "Latest added", "da": "Senest tilføjet" },
@@ -157,6 +173,8 @@
         "measure_shopping_count",
         "alarm_expired",
         "kitchey_next_expiring",
+        "kitchey_expired_list",
+        "kitchey_expiring_list",
         "kitchey_latest_item"
       ],
       "images": {
@@ -180,6 +198,8 @@
         "measure_expired",
         "alarm_expired",
         "kitchey_next_expiring",
+        "kitchey_expired_list",
+        "kitchey_expiring_list",
         "kitchey_latest_item"
       ],
       "images": {
