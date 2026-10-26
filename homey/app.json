@@ -1,6 +1,6 @@
 {
   "id": "dk.kitchey.homey",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "compatibility": ">=5.0.0",
   "sdk": 3,
   "platforms": ["local"],
@@ -541,6 +541,119 @@
         "tokens": [
           { "name": "text", "type": "string", "title": { "en": "Expiring items", "da": "Varer der udløber" }, "example": { "en": "Milk (today), Cheese (2 days)", "da": "Mælk (i dag), Ost (2 dage)" } },
           { "name": "count", "type": "number", "title": { "en": "Count", "da": "Antal" }, "example": 2 }
+        ]
+      },
+      {
+        "id": "unit_add_item",
+        "title": { "en": "Add a catalog product to this storage unit", "da": "Læg et katalogprodukt i dette opbevaringssted" },
+        "titleFormatted": { "en": "Add [[quantity]] [[product]] here, expires in [[days]] days", "da": "Læg [[quantity]] [[product]] her, udløber om [[days]] dage" },
+        "hint": { "en": "Set days to 0 for no expiry date.", "da": "Sæt dage til 0 for ingen udløbsdato." },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=storage-unit" },
+          { "type": "autocomplete", "name": "product", "title": { "en": "Product", "da": "Produkt" }, "placeholder": { "en": "Milk", "da": "Mælk" } },
+          { "type": "number", "name": "quantity", "title": { "en": "Quantity", "da": "Antal" }, "min": 1, "step": 1, "placeholder": { "en": "1", "da": "1" } },
+          { "type": "number", "name": "days", "title": { "en": "Expires in (days)", "da": "Udløber om (dage)" }, "min": 0, "max": 3650, "step": 1, "placeholder": { "en": "0", "da": "0" } }
+        ]
+      },
+      {
+        "id": "unit_add_item_by_name",
+        "title": { "en": "Add an item to this storage unit by name", "da": "Læg en vare i dette opbevaringssted efter navn" },
+        "titleFormatted": { "en": "Add [[quantity]] [[name]] here, expires in [[days]] days", "da": "Læg [[quantity]] [[name]] her, udløber om [[days]] dage" },
+        "hint": { "en": "Creates the product in the catalog if it does not exist. Set days to 0 for no expiry date.", "da": "Opretter produktet i kataloget hvis det ikke findes. Sæt dage til 0 for ingen udløbsdato." },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=storage-unit" },
+          { "type": "text", "name": "name", "title": { "en": "Product name", "da": "Produktnavn" }, "placeholder": { "en": "Milk", "da": "Mælk" } },
+          { "type": "number", "name": "quantity", "title": { "en": "Quantity", "da": "Antal" }, "min": 1, "step": 1, "placeholder": { "en": "1", "da": "1" } },
+          { "type": "number", "name": "days", "title": { "en": "Expires in (days)", "da": "Udløber om (dage)" }, "min": 0, "max": 3650, "step": 1, "placeholder": { "en": "0", "da": "0" } }
+        ]
+      },
+      {
+        "id": "unit_use_item",
+        "title": { "en": "Mark an item in this storage unit as used", "da": "Marker en vare i dette opbevaringssted som brugt" },
+        "titleFormatted": { "en": "Use [[amount]] of [[item]] here", "da": "Brug [[amount]] af [[item]] her" },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=storage-unit" },
+          { "type": "autocomplete", "name": "item", "title": { "en": "Item", "da": "Vare" }, "placeholder": { "en": "Milk", "da": "Mælk" } },
+          { "type": "number", "name": "amount", "title": { "en": "Amount", "da": "Antal" }, "min": 1, "step": 1, "placeholder": { "en": "1", "da": "1" } }
+        ]
+      },
+      {
+        "id": "unit_remove_item",
+        "title": { "en": "Remove an item from this storage unit", "da": "Fjern en vare fra dette opbevaringssted" },
+        "titleFormatted": { "en": "Remove [[item]] from here", "da": "Fjern [[item]] herfra" },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=storage-unit" },
+          { "type": "autocomplete", "name": "item", "title": { "en": "Item", "da": "Vare" }, "placeholder": { "en": "Milk", "da": "Mælk" } }
+        ]
+      },
+      {
+        "id": "unit_get_expiring_text",
+        "title": { "en": "Get expiring items in this storage unit as text", "da": "Hent varer i dette opbevaringssted der udløber som tekst" },
+        "titleFormatted": { "en": "Get items here expiring within [[days]] days as text", "da": "Hent varer her der udløber inden for [[days]] dage som tekst" },
+        "hint": { "en": "Includes already expired items.", "da": "Inkluderer allerede udløbede varer." },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=storage-unit" },
+          { "type": "number", "name": "days", "title": { "en": "Days", "da": "Dage" }, "min": 0, "max": 30, "step": 1, "placeholder": { "en": "3", "da": "3" } }
+        ],
+        "tokens": [
+          { "name": "text", "type": "string", "title": { "en": "Expiring items", "da": "Varer der udløber" }, "example": { "en": "Milk (today), Cheese (2 days)", "da": "Mælk (i dag), Ost (2 dage)" } },
+          { "name": "count", "type": "number", "title": { "en": "Count", "da": "Antal" }, "example": 2 }
+        ]
+      },
+      {
+        "id": "list_add",
+        "title": { "en": "Add an item to this shopping list", "da": "Sæt en vare på denne indkøbsliste" },
+        "titleFormatted": { "en": "Add [[quantity]] [[unit]] [[name]] to this list", "da": "Sæt [[quantity]] [[unit]] [[name]] på listen" },
+        "hint": { "en": "If the name matches a catalog product it is linked to that product.", "da": "Matcher navnet et katalogprodukt, kobles punktet til produktet." },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=shopping" },
+          { "type": "text", "name": "name", "title": { "en": "Item name", "da": "Varenavn" }, "placeholder": { "en": "Coffee", "da": "Kaffe" } },
+          { "type": "number", "name": "quantity", "title": { "en": "Quantity", "da": "Antal" }, "min": 1, "step": 1, "placeholder": { "en": "1", "da": "1" } },
+          { "type": "text", "name": "unit", "title": { "en": "Unit", "da": "Enhed" }, "placeholder": { "en": "pcs", "da": "stk" }, "required": false }
+        ]
+      },
+      {
+        "id": "list_check",
+        "title": { "en": "Check off an item on this shopping list", "da": "Afkryds et punkt på denne indkøbsliste" },
+        "titleFormatted": { "en": "Check off [[item]] on this list", "da": "Afkryds [[item]] på listen" },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=shopping" },
+          { "type": "autocomplete", "name": "item", "title": { "en": "Item", "da": "Vare" }, "placeholder": { "en": "Coffee", "da": "Kaffe" } }
+        ]
+      },
+      {
+        "id": "list_check_by_name",
+        "title": { "en": "Check off an item on this shopping list by name", "da": "Afkryds et punkt på denne indkøbsliste efter navn" },
+        "titleFormatted": { "en": "Check off [[name]] on this list", "da": "Afkryds [[name]] på listen" },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=shopping" },
+          { "type": "text", "name": "name", "title": { "en": "Item name", "da": "Varenavn" }, "placeholder": { "en": "Coffee", "da": "Kaffe" } }
+        ]
+      },
+      {
+        "id": "list_remove",
+        "title": { "en": "Remove an item from this shopping list", "da": "Fjern et punkt fra denne indkøbsliste" },
+        "titleFormatted": { "en": "Remove [[item]] from this list", "da": "Fjern [[item]] fra listen" },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=shopping" },
+          { "type": "autocomplete", "name": "item", "title": { "en": "Item", "da": "Vare" }, "placeholder": { "en": "Coffee", "da": "Kaffe" } }
+        ]
+      },
+      {
+        "id": "list_remove_by_name",
+        "title": { "en": "Remove an item from this shopping list by name", "da": "Fjern et punkt fra denne indkøbsliste efter navn" },
+        "titleFormatted": { "en": "Remove [[name]] from this list", "da": "Fjern [[name]] fra listen" },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=shopping" },
+          { "type": "text", "name": "name", "title": { "en": "Item name", "da": "Varenavn" }, "placeholder": { "en": "Coffee", "da": "Kaffe" } }
+        ]
+      },
+      {
+        "id": "list_clear_checked",
+        "title": { "en": "Clear checked items on this shopping list", "da": "Ryd afkrydsede punkter på denne indkøbsliste" },
+        "titleFormatted": { "en": "Clear checked items on this list", "da": "Ryd afkrydsede punkter på listen" },
+        "args": [
+          { "type": "device", "name": "device", "filter": "driver_id=shopping" }
         ]
       },
       {

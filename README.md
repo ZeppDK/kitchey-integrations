@@ -151,8 +151,8 @@ homey app install
 
 ### Devices
 
-- **Household overview** — items in stock, expiring within 3 / 7 days, expired, open shopping items, expired items alarm, next to expire, latest added
-- **Storage unit** — one device per storage unit, with items in stock, expiring within 3 / 7 days, expired, expired items alarm, next to expire and latest added
+- **Household overview** — items in stock, expiring within 3 / 7 days, expired, open shopping items, expired items alarm, next to expire, latest added, expired items (names), expiring within 7 days (names)
+- **Storage unit** — one device per storage unit, with items in stock, expiring within 3 / 7 days, expired, expired items alarm, next to expire, latest added, expired items (names) and expiring within 7 days (names)
 - **Shopping list** — open shopping items, the shopping list as text, and one capability per open item (max 15)
 
 Numbers and alarms are logged to Homey Insights. Data updates every **5 minutes** and immediately after any Flow action. All cards and device texts are also available in Danish.
@@ -198,6 +198,25 @@ Numbers and alarms are logged to Homey Insights. Data updates every **5 minutes*
 - Create a storage unit
 - Create a shelf in a storage unit
 - Refresh data from Kitchey now
+
+**Device cards**
+
+The cards above are app cards and live under **Apps → Kitchey** in the Flow editor. Device cards appear when you pick a Storage unit device or the Shopping list device directly.
+
+On a Storage unit device:
+- Add a catalog product to this storage unit
+- Add an item to this storage unit by name
+- Mark an item in this storage unit as used
+- Remove an item from this storage unit
+- Get expiring items in this storage unit as text
+
+On the Shopping list device:
+- Add an item to this shopping list
+- Check off an item on this shopping list
+- Check off an item on this shopping list by name
+- Remove an item from this shopping list
+- Remove an item from this shopping list by name
+- Clear checked items on this shopping list
 
 See [homey/README.md](homey/README.md) for arguments, tokens, dashboards, example Flows, self-hosting and troubleshooting.
 

@@ -42,11 +42,11 @@ Add devices via the pair wizard (**Devices → Add → Kitchey**). Items are map
 
 | Device | Added | Capabilities |
 |--------|-------|--------------|
-| **Household overview** | Once | Items in stock\*, Expiring within 3 days\*, Expiring within 7 days\*, Expired\*, Open shopping items\*, Expired items alarm\*, Next to expire, Latest added |
-| **Storage unit** | One per storage unit (fridge, freezer, pantry, …) | Items in stock\*, Expiring within 3 days\*, Expiring within 7 days\*, Expired\*, Expired items alarm\*, Next to expire, Latest added |
+| **Household overview** | Once | Items in stock\*, Expiring within 3 days\*, Expiring within 7 days\*, Expired\*, Open shopping items\*, Expired items alarm\*, Next to expire, Latest added, Expired items, Expiring within 7 days (text) |
+| **Storage unit** | One per storage unit (fridge, freezer, pantry, …) | Items in stock\*, Expiring within 3 days\*, Expiring within 7 days\*, Expired\*, Expired items alarm\*, Next to expire, Latest added, Expired items, Expiring within 7 days (text) |
 | **Shopping list** | Once | Open shopping items\*, Shopping list, plus one **Item** capability per open item (see below) |
 
-\* Logged to **Homey Insights** (numbers and the alarm). The text capabilities (Next to expire, Latest added, Shopping list, Item) are not logged.
+\* Logged to **Homey Insights** (numbers and the alarm). The text capabilities (Next to expire, Latest added, Expired items, Expiring within 7 days (text), Shopping list, Item) are not logged.
 
 - **Items in stock** — number of inventory items.
 - **Expiring within 3 days / 7 days** — number of items with an expiry date within the window (today included).
@@ -54,6 +54,8 @@ Add devices via the pair wizard (**Devices → Add → Kitchey**). Items are map
 - **Expired items alarm** — on while at least one item is expired. Insights show it as "Expired items in stock" / "No expired items".
 - **Next to expire** — text such as `Milk · 01-11 (tomorrow)` (day-month) for the not-yet-expired item that expires first.
 - **Latest added** — text such as `Cheese (1 pcs)` for the most recently added item.
+- **Expired items** — text with the names of the expired items (up to 5, then `(+n)` for the rest).
+- **Expiring within 7 days (text)** — text with the names of the items expiring within 7 days and the relative day, e.g. `Chicken breast (6 days)` (up to 5, then `(+n)` for the rest). This text capability is separate from the numeric *Expiring within 7 days* count.
 - **Open shopping items** — number of unchecked shopping-list items.
 - **Shopping list** — text with the names of the first 6 open items (`Milk, Coffee, … (+3)` when there are more).
 
@@ -64,7 +66,7 @@ Add devices via the pair wizard (**Devices → Add → Kitchey**). Items are map
 Use the devices on **Homey Dashboards** like any other device:
 
 - **Sensor tiles** for the number capabilities (Items in stock, Expiring within 3/7 days, Expired, Open shopping items).
-- **Text tiles** for **Next to expire** and **Latest added** (storage unit and household devices) and **Shopping list** (shopping device). Add the Shopping list device as a whole to see every open item with its quantity.
+- **Text tiles** for **Next to expire**, **Latest added**, **Expired items** and **Expiring within 7 days** (text) (storage unit and household devices) and **Shopping list** (shopping device). Add the Shopping list device as a whole to see every open item with its quantity.
 - **Status tile** for **Expired items alarm** — a quick red/green indicator for each storage unit or the whole household.
 - **Insights graphs** for the counts over time, e.g. open shopping items per week or the number of items expiring within 7 days.
 
@@ -123,6 +125,33 @@ The first poll after saving the settings only sets a baseline, so the added/remo
 | Create a shelf in a storage unit | Shelf name, Storage unit (autocomplete) | – | |
 | Refresh data from Kitchey now | – | – | Polls Kitchey immediately and fails with the error text if the poll fails. |
 
+### Device cards
+
+The cards above are *app* cards. They are found under **Apps → Kitchey** in the *Then* column of the Flow editor.
+
+In addition, the cards below appear when you pick a **Storage unit** device or the **Shopping list** device directly in the Flow editor. The device you choose replaces the "Storage unit" argument of the corresponding app card, so you do not have to pick the unit again. They behave like the matching app cards.
+
+**On a Storage unit device**
+
+| Card | Arguments | Tokens | Notes |
+|------|-----------|--------|-------|
+| Add a catalog product to this storage unit | Product (autocomplete), Quantity, Expires in (days) | – | Same as *Add a catalog product to stock*. Set days to 0 for no expiry date. |
+| Add an item to this storage unit by name | Product name, Quantity, Expires in (days) | – | Same as *Add an item to stock by name*. Creates the product in the catalog if it does not exist. Set days to 0 for no expiry date. |
+| Mark an item in this storage unit as used | Item (autocomplete), Amount | – | The autocomplete only lists items in this storage unit. |
+| Remove an item from this storage unit | Item (autocomplete) | – | The autocomplete only lists items in this storage unit. |
+| Get expiring items in this storage unit as text | Days | Expiring items (text), Count | Same as *Get expiring items as text*, limited to this storage unit. Includes already expired items. |
+
+**On the Shopping list device**
+
+| Card | Arguments | Tokens | Notes |
+|------|-----------|--------|-------|
+| Add an item to this shopping list | Item name, Quantity, Unit | – | Same as *Add an item to the shopping list*. If the name matches a catalog product, the item is linked to that product. |
+| Check off an item on this shopping list | Item (autocomplete) | – | |
+| Check off an item on this shopping list by name | Item name | – | Fails if the name is not on the open list. |
+| Remove an item from this shopping list | Item (autocomplete) | – | |
+| Remove an item from this shopping list by name | Item name | – | Fails if the name is not on the open list. |
+| Clear checked items on this shopping list | – | – | |
+
 ## Example Flows
 
 **Morning briefing**
@@ -157,7 +186,7 @@ Self-hosted Kitchey servers work: enter your own URL (e.g. `http://192.168.1.10:
 
 ## Polling & limits
 
-- Data is refreshed from Kitchey every **5 minutes**, and again right after every Flow action that changes something.
+- Data is refreshed from Kitchey every **5 minutes**, and again right after every Flow action that changes something. The action waits for that refresh to finish, so a following card in the same Flow sees fresh data.
 - The **Refresh data from Kitchey now** action polls on demand.
 - There is no realtime push yet, so changes made in the Kitchey app can take up to 5 minutes to show up in Homey, and the diff-based triggers fire at the next poll.
 - The Shopping list device shows at most 15 per-item capabilities and 6 names in the text capability.

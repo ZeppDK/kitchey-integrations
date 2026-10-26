@@ -306,9 +306,10 @@ class KitcheyApp extends Homey.App {
     return this._catalogCache.items;
   }
 
+  /** Refresh after a change so the next card in the same Flow sees fresh data. */
   _afterMutation() {
     this._catalogCache.at = 0;
-    this.poll().catch(() => {});
+    return this.poll().catch(() => {});
   }
 
   _matches(query, ...fields) {
@@ -436,6 +437,19 @@ class KitcheyApp extends Homey.App {
     });
   }
 
+  async _addToShopping(rawName, quantity, unit) {
+    const api = this._requireApi();
+    const name = String(rawName || '').trim();
+    if (!name) throw new Error(this.homey.__('error.name_required'));
+    let productId = null;
+    try {
+      const product = (await this._getCatalog()).find((p) => norm(p.name) === norm(name));
+      if (product) productId = product.id;
+    } catch { /* fall back to custom name */ }
+    await api.addToShopping({ productId, name, quantity: Number(quantity) || 1, unit: (unit || '').trim() || 'stk' });
+    await this._afterMutation();
+  }
+
   _expiringText(items, days) {
     const list = items
       .filter((i) => i.days_left !== null && i.days_left !== undefined && i.days_left <= days)
@@ -492,49 +506,40 @@ class KitcheyApp extends Homey.App {
 
     // Actions — shopping list
     flow.getActionCard('add_to_shopping').registerRunListener(async (args) => {
-      const api = this._requireApi();
-      const name = String(args.name || '').trim();
-      if (!name) throw new Error(this.homey.__('error.name_required'));
-      let productId = null;
-      try {
-        const product = (await this._getCatalog()).find((p) => norm(p.name) === norm(name));
-        if (product) productId = product.id;
-      } catch { /* fall back to custom name */ }
-      await api.addToShopping({ productId, name, quantity: Number(args.quantity) || 1, unit: (args.unit || '').trim() || 'stk' });
-      this._afterMutation();
+      await this._addToShopping(args.name, args.quantity, args.unit);
     });
 
     const deleteShopping = flow.getActionCard('delete_shopping_item');
     deleteShopping.registerArgumentAutocompleteListener('item', (q) => this._acShopping(q));
     deleteShopping.registerRunListener(async (args) => {
       await this._requireApi().deleteShoppingItem(args.item.id);
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     flow.getActionCard('delete_shopping_item_by_name').registerRunListener(async (args) => {
       const item = this._findOpenShoppingByName(args.name);
       if (!item) throw new Error(this.homey.__('error.not_on_list', { name: args.name }));
       await this._requireApi().deleteShoppingItem(item.id);
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     const checkShopping = flow.getActionCard('check_shopping_item');
     checkShopping.registerArgumentAutocompleteListener('item', (q) => this._acShopping(q));
     checkShopping.registerRunListener(async (args) => {
       await this._requireApi().checkShoppingItem(args.item.id);
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     flow.getActionCard('check_shopping_item_by_name').registerRunListener(async (args) => {
       const item = this._findOpenShoppingByName(args.name);
       if (!item) throw new Error(this.homey.__('error.not_on_list', { name: args.name }));
       await this._requireApi().checkShoppingItem(item.id);
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     flow.getActionCard('clear_checked_shopping').registerRunListener(async () => {
       await this._requireApi().clearCheckedShopping();
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     flow.getActionCard('get_shopping_list_text').registerRunListener(async () => {
@@ -550,14 +555,14 @@ class KitcheyApp extends Homey.App {
     useItem.registerArgumentAutocompleteListener('item', (q) => this._acInventory(q));
     useItem.registerRunListener(async (args) => {
       await this._requireApi().useItem(args.item.id, Number(args.amount) || 1);
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     flow.getActionCard('use_item_by_name').registerRunListener(async (args) => {
       const item = this._findInventoryByName(args.name);
       if (!item) throw new Error(this.homey.__('error.not_in_stock', { name: args.name }));
       await this._requireApi().useItem(item.id, Number(args.amount) || 1);
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     const setQuantity = flow.getActionCard('set_item_quantity');
@@ -566,14 +571,14 @@ class KitcheyApp extends Homey.App {
       const item = this._requireSnapshot().inventory.find((i) => i.id === args.item.id);
       if (!item) throw new Error(this.homey.__('error.not_in_stock', { name: args.item.name }));
       await this._requireApi().updateInventoryItem(item, { quantity: Math.max(0, Math.round(Number(args.quantity) || 0)) });
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     const removeItem = flow.getActionCard('remove_inventory_item');
     removeItem.registerArgumentAutocompleteListener('item', (q) => this._acInventory(q));
     removeItem.registerRunListener(async (args) => {
       await this._requireApi().deleteInventoryItem(args.item.id);
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     const addItem = flow.getActionCard('add_inventory_item');
@@ -588,7 +593,7 @@ class KitcheyApp extends Homey.App {
         quantity: Math.max(1, Math.round(Number(args.quantity) || 1)),
         expiryDate: this._expiryDateFromDays(args.days),
       });
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     const addByName = flow.getActionCard('add_inventory_item_by_name');
@@ -597,7 +602,7 @@ class KitcheyApp extends Homey.App {
       const unit = this._requireSnapshot().units.find((u) => u.id === args.unit.id);
       if (!unit) throw new Error(this.homey.__('error.unit_missing'));
       await this._addByName({ name: args.name, quantity: args.quantity, unit, days: args.days });
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     const getStock = flow.getActionCard('get_stock_count');
@@ -607,6 +612,8 @@ class KitcheyApp extends Homey.App {
     const getExpiring = flow.getActionCard('get_expiring_text');
     getExpiring.registerArgumentAutocompleteListener('unit', (q) => this._acUnits(q, { includeAll: true }));
     getExpiring.registerRunListener(async (args) => this._expiringText(this._itemsInUnit(args.unit), Number(args.days) || 0));
+
+    this._registerDeviceCards(flow);
 
     // Actions — catalog & structure
     flow.getActionCard('create_catalog_product').registerRunListener(async (args) => {
@@ -621,7 +628,7 @@ class KitcheyApp extends Homey.App {
 
     flow.getActionCard('create_storage_unit').registerRunListener(async (args) => {
       await this._requireApi().createStorageUnit({ name: String(args.name || '').trim(), listType: args.list_type });
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     const createShelf = flow.getActionCard('create_shelf');
@@ -630,13 +637,110 @@ class KitcheyApp extends Homey.App {
       const unit = this._requireSnapshot().units.find((u) => u.id === args.unit.id);
       if (!unit) throw new Error(this.homey.__('error.unit_missing'));
       await this._requireApi().createShelf({ name: String(args.name || '').trim(), storageUnitId: unit.id, listType: unit.list_type });
-      this._afterMutation();
+      await this._afterMutation();
     });
 
     flow.getActionCard('refresh').registerRunListener(async () => {
       this._requireApi();
       await this.poll();
       if (this.lastError) throw new Error(this.lastError);
+    });
+  }
+
+  // ── Device cards (the device itself is the storage unit / shopping list) ─
+
+  _unitOfDevice(device) {
+    const unitId = device.getData().storage_unit_id;
+    const unit = this._requireSnapshot().units.find((u) => u.id === unitId);
+    if (!unit) throw new Error(this.homey.__('error.unit_deleted'));
+    return unit;
+  }
+
+  _acInventoryInUnit(query, args) {
+    if (!this.snapshot || !args || !args.device) return [];
+    const unitId = args.device.getData().storage_unit_id;
+    return this._acInventory(query).filter((entry) => {
+      const item = this.snapshot.inventory.find((i) => i.id === entry.id);
+      return item && item.storage_unit_id === unitId;
+    });
+  }
+
+  _registerDeviceCards(flow) {
+    // Storage unit
+    const unitAdd = flow.getActionCard('unit_add_item');
+    unitAdd.registerArgumentAutocompleteListener('product', (q) => this._acCatalog(q));
+    unitAdd.registerRunListener(async (args) => {
+      const unit = this._unitOfDevice(args.device);
+      await this._requireApi().addInventoryItem({
+        productId: args.product.id,
+        listType: unit.list_type,
+        quantity: Math.max(1, Math.round(Number(args.quantity) || 1)),
+        expiryDate: this._expiryDateFromDays(args.days),
+      });
+      await this._afterMutation();
+    });
+
+    flow.getActionCard('unit_add_item_by_name').registerRunListener(async (args) => {
+      const unit = this._unitOfDevice(args.device);
+      await this._addByName({ name: args.name, quantity: args.quantity, unit, days: args.days });
+      await this._afterMutation();
+    });
+
+    const unitUse = flow.getActionCard('unit_use_item');
+    unitUse.registerArgumentAutocompleteListener('item', (q, args) => this._acInventoryInUnit(q, args));
+    unitUse.registerRunListener(async (args) => {
+      await this._requireApi().useItem(args.item.id, Number(args.amount) || 1);
+      await this._afterMutation();
+    });
+
+    const unitRemove = flow.getActionCard('unit_remove_item');
+    unitRemove.registerArgumentAutocompleteListener('item', (q, args) => this._acInventoryInUnit(q, args));
+    unitRemove.registerRunListener(async (args) => {
+      await this._requireApi().deleteInventoryItem(args.item.id);
+      await this._afterMutation();
+    });
+
+    flow.getActionCard('unit_get_expiring_text').registerRunListener(async (args) => {
+      const unit = this._unitOfDevice(args.device);
+      return this._expiringText(this._itemsInUnit({ id: unit.id }), Number(args.days) || 0);
+    });
+
+    // Shopping list
+    flow.getActionCard('list_add').registerRunListener(async (args) => {
+      await this._addToShopping(args.name, args.quantity, args.unit);
+    });
+
+    const listCheck = flow.getActionCard('list_check');
+    listCheck.registerArgumentAutocompleteListener('item', (q) => this._acShopping(q));
+    listCheck.registerRunListener(async (args) => {
+      await this._requireApi().checkShoppingItem(args.item.id);
+      await this._afterMutation();
+    });
+
+    flow.getActionCard('list_check_by_name').registerRunListener(async (args) => {
+      const item = this._findOpenShoppingByName(args.name);
+      if (!item) throw new Error(this.homey.__('error.not_on_list', { name: args.name }));
+      await this._requireApi().checkShoppingItem(item.id);
+      await this._afterMutation();
+    });
+
+    const listRemove = flow.getActionCard('list_remove');
+    listRemove.registerArgumentAutocompleteListener('item', (q) => this._acShopping(q));
+    listRemove.registerRunListener(async (args) => {
+      await this._requireApi().deleteShoppingItem(args.item.id);
+      await this._afterMutation();
+    });
+
+    flow.getActionCard('list_remove_by_name').registerRunListener(async (args) => {
+      const item = this._findOpenShoppingByName(args.name);
+      if (!item) throw new Error(this.homey.__('error.not_on_list', { name: args.name }));
+      await this._requireApi().deleteShoppingItem(item.id);
+      await this._afterMutation();
+    });
+
+    flow.getActionCard('list_clear_checked').registerRunListener(async () => {
+      await this._requireApi().clearCheckedShopping();
+      await this._afterMutation();
     });
   }
 
