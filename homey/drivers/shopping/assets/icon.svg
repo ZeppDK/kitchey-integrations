@@ -1,15 +1,18 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <g transform="translate(50 50) scale(0.9545454545454546) translate(-50 -49)">
-  <g fill="none" stroke="#000" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
-    <line x1="10" y1="40" x2="90" y2="40"/>
-    <path d="M18 40 L26 82 H74 L82 40"/>
-    <path d="M32 38 L44 16"/>
-    <path d="M68 38 L56 16"/>
-  </g>
-  <g stroke="#000" stroke-width="7" stroke-linecap="round">
-    <line x1="38" y1="53" x2="38" y2="69"/>
-    <line x1="50" y1="53" x2="50" y2="69"/>
-    <line x1="62" y1="53" x2="62" y2="69"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960">
+  <g transform="scale(9.6)">
+    <g transform="translate(50 50) scale(0.9545454545454546) translate(-50 -49)">
+    <g fill="none" stroke="#000" stroke-width="7" stroke-linecap="round" stroke-linejoin="round">
+      <line x1="10" y1="40" x2="90" y2="40"/>
+      <path d="M18 40 L26 82 H74 L82 40"/>
+      <path d="M32 38 L44 16"/>
+      <path d="M68 38 L56 16"/>
+    </g>
+    <g stroke="#000" stroke-width="7" stroke-linecap="round">
+      <line x1="38" y1="53" x2="38" y2="69"/>
+      <line x1="50" y1="53" x2="50" y2="69"/>
+      <line x1="62" y1="53" x2="62" y2="69"/>
+    </g>
+    </g>
+  
   </g>
 </svg>

@@ -1,9 +1,12 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <g transform="translate(50 50) scale(0.13043478260869565) translate(-512 -520)">
-  <rect x="340" y="220" width="344" height="600" rx="48" fill="none" stroke="#000" stroke-width="44"/>
-  <line x1="340" y1="420" x2="684" y2="420" stroke="#000" stroke-width="44"/>
-  <line x1="340" y1="620" x2="684" y2="620" stroke="#000" stroke-width="36"/>
-  <line x1="610" y1="305" x2="610" y2="365" stroke="#000" stroke-width="40" stroke-linecap="round"/>
-  <line x1="610" y1="490" x2="610" y2="560" stroke="#000" stroke-width="40" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960">
+  <g transform="scale(9.6)">
+    <g transform="translate(50 50) scale(0.13043478260869565) translate(-512 -520)">
+    <rect x="340" y="220" width="344" height="600" rx="48" fill="none" stroke="#000" stroke-width="44"/>
+    <line x1="340" y1="420" x2="684" y2="420" stroke="#000" stroke-width="44"/>
+    <line x1="340" y1="620" x2="684" y2="620" stroke="#000" stroke-width="36"/>
+    <line x1="610" y1="305" x2="610" y2="365" stroke="#000" stroke-width="40" stroke-linecap="round"/>
+    <line x1="610" y1="490" x2="610" y2="560" stroke="#000" stroke-width="40" stroke-linecap="round"/>
+    </g>
+  
   </g>
 </svg>

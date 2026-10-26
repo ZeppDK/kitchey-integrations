@@ -1,10 +1,13 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <g transform="translate(50 50) scale(0.15441176470588236) translate(-512 -456)">
-  <rect x="262" y="290" width="500" height="380" rx="48" fill="none" stroke="#000" stroke-width="44"/>
-  <line x1="262" y1="460" x2="762" y2="460" stroke="#000" stroke-width="44"/>
-  <circle cx="512" cy="355" r="38" fill="#000"/>
-  <rect x="492" y="220" width="40" height="148" rx="20" fill="#000"/>
-  <line x1="512" y1="525" x2="512" y2="615" stroke="#000" stroke-width="44" stroke-linecap="round"/>
-  <line x1="467" y1="570" x2="557" y2="570" stroke="#000" stroke-width="44" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 960">
+  <g transform="scale(9.6)">
+    <g transform="translate(50 50) scale(0.15441176470588236) translate(-512 -456)">
+    <rect x="262" y="290" width="500" height="380" rx="48" fill="none" stroke="#000" stroke-width="44"/>
+    <line x1="262" y1="460" x2="762" y2="460" stroke="#000" stroke-width="44"/>
+    <circle cx="512" cy="355" r="38" fill="#000"/>
+    <rect x="492" y="220" width="40" height="148" rx="20" fill="#000"/>
+    <line x1="512" y1="525" x2="512" y2="615" stroke="#000" stroke-width="44" stroke-linecap="round"/>
+    <line x1="467" y1="570" x2="557" y2="570" stroke="#000" stroke-width="44" stroke-linecap="round"/>
+    </g>
+  
   </g>
 </svg>
