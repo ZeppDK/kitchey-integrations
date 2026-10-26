@@ -128,9 +128,16 @@ title: Katalog       # optional
 
 ## Homey
 
-> **Not yet in the Homey App Store.** Until the app is published, install it by sideloading it with the Homey CLI. Requires a Homey Pro and Node.js 18+.
+### Install
 
-### Install (sideload)
+Install from the Homey App Store **Test channel** — works on any Homey Pro, no developer tools needed:
+
+**https://homey.app/a/dk.kitchey.homey/test/**
+
+Updates on the Test channel are manual: open the link again when a new build is released. The app will be listed publicly in the Homey App Store once certified.
+
+<details>
+<summary>Alternative: sideload from source (Homey CLI, Node.js 18+)</summary>
 
 ```bash
 npm install -g homey
@@ -140,7 +147,7 @@ npm install
 homey app install
 ```
 
-`homey app install` installs the app permanently on your Homey Pro. Use `homey app run` instead for a development session with live logs.
+</details>
 
 ### Setup
 

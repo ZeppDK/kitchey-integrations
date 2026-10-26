@@ -6,12 +6,18 @@ App id: `dk.kitchey.homey` (Homey SDK 3, Homey Pro). All Flow cards, capabilitie
 
 ## Installation
 
-> **The app is not yet in the Homey App Store.** Until it is published, install it by sideloading it with the Homey CLI. Once published, it will be available in the Homey App Store and you can install it from there instead.
+The app is published in the Homey App Store **Test channel**. Install it from the test link, which works on any Homey Pro and needs no developer tools:
 
-Requirements:
+**https://homey.app/a/dk.kitchey.homey/test/**
 
-- A **Homey Pro** (the app is local-only)
-- **Node.js 18+** on the computer you install from
+Open the link, sign in with your Homey account, pick your Homey and press *Install*. Updates are not automatic on the Test channel: when a new build is released to Test, open the link again and install it.
+
+Once the app has been certified by Athom it will be listed publicly in the Homey App Store and update automatically.
+
+<details>
+<summary>Alternative: sideload from source with the Homey CLI</summary>
+
+Requires a Homey Pro and Node.js 18+ on the computer you install from.
 
 ```bash
 npm install -g homey
@@ -22,6 +28,8 @@ homey app install
 ```
 
 `homey app install` installs the app permanently on your Homey Pro. For a development session with live logs, use `homey app run` instead (the app is removed again when you stop the session).
+
+</details>
 
 ## Setup
 
