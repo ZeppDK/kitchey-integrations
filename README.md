@@ -162,6 +162,8 @@ homey app install
 - **Storage unit** — one device per storage unit, with items in stock, expiring within 3 / 7 days, expired, expired items alarm, next to expire, latest added, expired items (names) and expiring within 7 days (names)
 - **Shopping list** — open shopping items, the shopping list as text, and one capability per open item (max 15)
 
+- **Shopping list widget** for Homey Dashboards — add, check off, remove and clear items straight from a dashboard; updates live
+
 Numbers and alarms are logged to Homey Insights. Data updates every **5 minutes** and immediately after any Flow action. All cards and device texts are also available in Danish.
 
 ### Flow cards

@@ -27,5 +27,11 @@
     "no_units": "Ingen opbevaringssteder fundet i husstanden.",
     "household_name": "Kitchey husstand",
     "shopping_name": "Indkøbsliste"
+  },
+  "widget": {
+    "empty": "Intet på listen",
+    "open": "Åbne",
+    "clear_checked": "Ryd afkrydsede",
+    "add_placeholder": "Tilføj vare…"
   }
 }

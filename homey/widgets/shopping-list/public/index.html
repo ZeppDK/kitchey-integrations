@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <style>
+    body { margin: 0; }
+    .wrap { display: flex; flex-direction: column; gap: var(--homey-su-2); }
+
+    .add { display: flex; gap: var(--homey-su-2); }
+    .add input {
+      flex: 1;
+      min-width: 0;
+      padding: var(--homey-su-2) var(--homey-su-3);
+      border: var(--homey-line);
+      border-radius: var(--homey-border-radius-default);
+      background: var(--homey-background-color);
+      color: var(--homey-text-color);
+      font-size: var(--homey-font-size-default);
+      outline: none;
+    }
+    .add input:focus { border-color: var(--homey-color-green); }
+    .add button {
+      padding: 0 var(--homey-su-4);
+      border: none;
+      border-radius: var(--homey-border-radius-default);
+      background: var(--homey-color-green);
+      color: var(--homey-text-color-white);
+      font-size: var(--homey-font-size-default);
+      font-weight: var(--homey-font-weight-medium);
+      cursor: pointer;
+    }
+    .add button:disabled { opacity: 0.5; }
+
+    .list { display: flex; flex-direction: column; }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: var(--homey-su-3);
+      padding: var(--homey-su-2) 0;
+      border-bottom: var(--homey-line-light);
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .row:last-child { border-bottom: none; }
+    .box {
+      flex: 0 0 auto;
+      width: 22px; height: 22px;
+      border: 2px solid var(--homey-color-green);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .box svg { width: 14px; height: 14px; display: none; }
+    .row.checked .box { background: var(--homey-color-green); }
+    .row.checked .box svg { display: block; }
+    .name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .row.checked .name { color: var(--homey-text-color-light); text-decoration: line-through; }
+    .qty { flex: 0 0 auto; color: var(--homey-text-color-light); font-size: var(--homey-font-size-small); }
+    .del {
+      flex: 0 0 auto;
+      width: 28px; height: 28px;
+      border: none; background: none;
+      color: var(--homey-text-color-light);
+      font-size: 18px; line-height: 1;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+
+    .foot { display: flex; justify-content: space-between; align-items: center; gap: var(--homey-su-2); }
+    .foot button {
+      border: none; background: none;
+      color: var(--homey-text-color-green);
+      font-size: var(--homey-font-size-small);
+      cursor: pointer; padding: var(--homey-su-1) 0;
+    }
+    .muted { color: var(--homey-text-color-light); font-size: var(--homey-font-size-small); }
+    .empty { text-align: center; padding: var(--homey-su-4) 0; }
+    .error { color: var(--homey-text-color-danger); font-size: var(--homey-font-size-small); }
+    .busy { opacity: 0.6; pointer-events: none; }
+  </style>
+</head>
+<body class="homey-widget">
+  <div class="wrap">
+    <form class="add" id="add" style="display:none">
+      <input type="text" id="name" autocomplete="off" />
+      <button type="submit" id="addBtn">+</button>
+    </form>
+    <div class="list" id="list"></div>
+    <div class="foot">
+      <span class="muted" id="count"></span>
+      <button type="button" id="clear" style="display:none"></button>
+    </div>
+    <div class="error" id="error" style="display:none"></div>
+  </div>
+
+  <script type="text/javascript">
+    function onHomeyReady(Homey) {
+      var settings = Homey.getSettings() || {};
+      var allowAdd = settings.allow_add !== false;
+      var showChecked = settings.show_checked !== false;
+      var maxItems = Number(settings.max_items) || 0;
+      var state = { open: [], checked: [] };
+
+      var $ = function (id) { return document.getElementById(id); };
+      var t = function (key, fallback) {
+        try { var s = Homey.__(key); return s && s !== key ? s : fallback; } catch (e) { return fallback; }
+      };
+
+      function esc(str) {
+        return String(str).replace(/[&<>"]/g, function (c) {
+          return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+        });
+      }
+
+      function render() {
+        var rows = state.open.slice();
+        if (showChecked) rows = rows.concat(state.checked);
+        if (maxItems > 0) rows = rows.slice(0, maxItems);
+
+        var html = '';
+        if (rows.length === 0) {
+          html = '<div class="empty muted">' + esc(t('widget.empty', 'Nothing on the list')) + '</div>';
+        }
+        for (var i = 0; i < rows.length; i++) {
+          var it = rows[i];
+          html += '<div class="row' + (it.checked ? ' checked' : '') + '" data-id="' + esc(it.id) + '" data-checked="' + (it.checked ? '1' : '0') + '">'
+            + '<span class="box"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L19 7"/></svg></span>'
+            + '<span class="name homey-text-regular">' + esc(it.name) + '</span>'
+            + '<span class="qty">' + esc(it.quantity + ' ' + it.unit) + '</span>'
+            + '<button type="button" class="del" data-del="' + esc(it.id) + '" aria-label="remove">×</button>'
+            + '</div>';
+        }
+        $('list').innerHTML = html;
+
+        var hidden = (state.open.length + (showChecked ? state.checked.length : 0)) - rows.length;
+        $('count').textContent = t('widget.open', 'Open') + ': ' + state.open.length + (hidden > 0 ? ' (+' + hidden + ')' : '');
+        $('clear').style.display = state.checked.length > 0 ? 'block' : 'none';
+        $('clear').textContent = t('widget.clear_checked', 'Clear checked') + ' (' + state.checked.length + ')';
+        $('add').style.display = allowAdd ? 'flex' : 'none';
+        $('name').placeholder = t('widget.add_placeholder', 'Add item…');
+
+        Homey.setHeight(document.body.scrollHeight);
+      }
+
+      function apply(list) {
+        state.open = (list && list.open) || [];
+        state.checked = (list && list.checked) || [];
+        showError(null);
+        render();
+      }
+
+      function showError(msg) {
+        var el = $('error');
+        el.style.display = msg ? 'block' : 'none';
+        el.textContent = msg || '';
+        if (msg) Homey.setHeight(document.body.scrollHeight);
+      }
+
+      function call(method, path, body) {
+        document.body.classList.add('busy');
+        return Homey.api(method, path, body || {})
+          .then(apply)
+          .catch(function (err) { showError(err && err.message ? err.message : String(err)); })
+          .then(function () { document.body.classList.remove('busy'); });
+      }
+
+      $('list').addEventListener('click', function (ev) {
+        var del = ev.target.closest('[data-del]');
+        if (del) { call('DELETE', '/' + encodeURIComponent(del.getAttribute('data-del'))); return; }
+        var row = ev.target.closest('.row');
+        if (!row) return;
+        var checked = row.getAttribute('data-checked') === '1';
+        call('PUT', '/' + encodeURIComponent(row.getAttribute('data-id')), { checked: !checked });
+      });
+
+      $('add').addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var name = $('name').value.trim();
+        if (!name) return;
+        $('name').value = '';
+        call('POST', '/', { name: name });
+      });
+
+      $('clear').addEventListener('click', function () { call('POST', '/clear-checked'); });
+
+      Homey.on('kitchey:shopping', apply);
+
+      Homey.ready();
+      render();
+      call('GET', '/');
+    }
+  </script>
+</body>
+</html>

@@ -22,6 +22,7 @@ class KitcheyApp extends Homey.App {
     this._reinitTimer = null;
     this._polling = null;
     this._catalogCache = { at: 0, items: [] };
+    this._lastShoppingEmitted = null;
 
     this._registerFlowCards();
 
@@ -102,6 +103,7 @@ class KitcheyApp extends Homey.App {
 
       await this._updateDevices(snapshot);
       this._setDevicesAvailable();
+      this._emitShoppingRealtime(snapshot);
 
       if (prev) {
         this._detectInventoryChanges(prev, snapshot);
@@ -742,6 +744,57 @@ class KitcheyApp extends Homey.App {
       await this._requireApi().clearCheckedShopping();
       await this._afterMutation();
     });
+  }
+
+  // ── Dashboard widget (widgets/shopping-list) ─────────────────────────────
+
+  _shoppingPayload(snapshot) {
+    const row = (i) => ({
+      id: i.id,
+      name: shoppingName(i),
+      quantity: Number(i.quantity) || 0,
+      unit: i.unit || 'stk',
+      checked: !!i.checked,
+      checked_by: i.checked_by || '',
+    });
+    return {
+      open: snapshot.openShopping.map(row),
+      checked: snapshot.shopping.filter((i) => i.checked).map(row),
+    };
+  }
+
+  /** Push the shopping list to open widgets when it changed. */
+  _emitShoppingRealtime(snapshot) {
+    const payload = this._shoppingPayload(snapshot);
+    const key = JSON.stringify(payload);
+    if (key === this._lastShoppingEmitted) return;
+    this._lastShoppingEmitted = key;
+    if (this.homey.api && typeof this.homey.api.realtime === 'function') {
+      this.homey.api.realtime('kitchey:shopping', payload).catch((err) => this.error('realtime failed:', err.message));
+    }
+  }
+
+  getShoppingForWidget() {
+    return this._shoppingPayload(this._requireSnapshot());
+  }
+
+  async addShoppingFromWidget(name) {
+    await this._addToShopping(name, 1, '');
+  }
+
+  async setShoppingCheckedFromWidget(id, checked) {
+    await this._requireApi().checkShoppingItem(id, !!checked);
+    await this._afterMutation();
+  }
+
+  async deleteShoppingFromWidget(id) {
+    await this._requireApi().deleteShoppingItem(id);
+    await this._afterMutation();
+  }
+
+  async clearCheckedFromWidget() {
+    await this._requireApi().clearCheckedShopping();
+    await this._afterMutation();
   }
 
   // ── Settings page API (see api.js) ──────────────────────────────────────

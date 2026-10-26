@@ -10,7 +10,7 @@ The app is published in the Homey App Store **Test channel**. Install it from th
 
 **https://homey.app/a/dk.kitchey.homey/test/**
 
-Open the link, sign in with your Homey account, pick your Homey and press *Install*. Updates are not automatic on the Test channel: when a new build is released to Test, open the link again and install it.
+Open the link, sign in with your Homey account, pick your Homey and press *Install*. Requires Homey firmware 12.3 or newer (Homey Pro 2023 and later). Updates are not automatic on the Test channel: when a new build is released to Test, open the link again and install it.
 
 Once the app has been certified by Athom it will be listed publicly in the Homey App Store and update automatically.
 
@@ -77,6 +77,18 @@ Use the devices on **Homey Dashboards** like any other device:
 - **Text tiles** for **Next to expire**, **Latest added**, **Expired items** and **Expiring within 7 days** (text) (storage unit and household devices) and **Shopping list** (shopping device). Add the Shopping list device as a whole to see every open item with its quantity.
 - **Status tile** for **Expired items alarm** — a quick red/green indicator for each storage unit or the whole household.
 - **Insights graphs** for the counts over time, e.g. open shopping items per week or the number of items expiring within 7 days.
+
+### Shopping list widget
+
+The app ships a **Shopping list** widget for Homey Dashboards (Homey Pro 2023 or later, firmware 12.3+). Add it via *Edit dashboard → Add widget → Kitchey → Shopping list*. It shows the open items with quantity and unit, lets you add an item from a text field, tap an item to check it off (tap again to undo), remove an item with ×, and clear all checked items. The list updates live when the shopping list changes in the Kitchey app or through Flows.
+
+Widget settings:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Show the add field | on | Hide the input field for a read-only list |
+| Show checked items | on | Also list checked items (struck through) below the open ones |
+| Maximum number of items | 12 | Limit the rows shown; 0 shows everything |
 
 ## Flow cards
 

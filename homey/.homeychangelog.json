@@ -2,5 +2,9 @@
   "1.2.1": {
     "en": "First release: household, storage unit and shopping list devices with Insights, 10 triggers, 5 conditions and 30 actions (incl. device cards), household picker in settings.",
     "da": "Første udgivelse: husstand, opbevaringssted og indkøbsliste som enheder med Insights, 10 triggers, 5 betingelser og 30 handlinger (inkl. enheds-kort), husstandsvælger i indstillinger."
+  },
+  "1.3.0": {
+    "en": "Shopping list widget for Homey Dashboards (add, check off, remove, clear checked; live updates). Device cards on storage units and the shopping list. Expired / expiring item names on devices. Settings page fix. Requires Homey 12.3+.",
+    "da": "Indkøbsliste-widget til Homey Dashboards (tilføj, afkryds, fjern, ryd afkrydsede; opdateres live). Enheds-kort på opbevaringssteder og indkøbsliste. Navne på udløbne/snart udløbne varer på enhederne. Rettet indstillingsside. Kræver Homey 12.3+."
   }
 }

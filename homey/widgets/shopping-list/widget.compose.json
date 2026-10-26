@@ -1,0 +1,34 @@
+{
+  "name": { "en": "Shopping list", "da": "Indkøbsliste" },
+  "height": 220,
+  "settings": [
+    {
+      "id": "allow_add",
+      "type": "checkbox",
+      "title": { "en": "Show the add field", "da": "Vis tilføj-felt" },
+      "value": true
+    },
+    {
+      "id": "show_checked",
+      "type": "checkbox",
+      "title": { "en": "Show checked items", "da": "Vis afkrydsede punkter" },
+      "value": true
+    },
+    {
+      "id": "max_items",
+      "type": "number",
+      "title": { "en": "Maximum number of items", "da": "Maks. antal punkter" },
+      "hint": { "en": "0 shows everything.", "da": "0 viser alle." },
+      "value": 12,
+      "min": 0,
+      "max": 100
+    }
+  ],
+  "api": {
+    "getList": { "method": "GET", "path": "/" },
+    "addItem": { "method": "POST", "path": "/" },
+    "clearChecked": { "method": "POST", "path": "/clear-checked" },
+    "setChecked": { "method": "PUT", "path": "/:id" },
+    "deleteItem": { "method": "DELETE", "path": "/:id" }
+  }
+}

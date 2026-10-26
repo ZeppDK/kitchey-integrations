@@ -27,5 +27,11 @@
     "no_units": "No storage units found in this household.",
     "household_name": "Kitchey household",
     "shopping_name": "Shopping list"
+  },
+  "widget": {
+    "empty": "Nothing on the list",
+    "open": "Open",
+    "clear_checked": "Clear checked",
+    "add_placeholder": "Add item…"
   }
 }
