@@ -10,7 +10,7 @@
     "expired": "expired",
     "today": "today",
     "tomorrow": "tomorrow",
-    "days": "{{days}} days"
+    "days": "__days__ days"
   },
   "none": "–",
   "error": {
@@ -18,8 +18,8 @@
     "no_data": "No data from Kitchey yet.",
     "missing_credentials": "Enter server URL and Personal Access Token.",
     "name_required": "A name is required.",
-    "not_on_list": "'{{name}}' is not on the shopping list.",
-    "not_in_stock": "'{{name}}' is not in stock.",
+    "not_on_list": "'__name__' is not on the shopping list.",
+    "not_in_stock": "'__name__' is not in stock.",
     "unit_missing": "Storage unit not found – refresh and pick it again.",
     "unit_deleted": "This storage unit no longer exists in Kitchey."
   },

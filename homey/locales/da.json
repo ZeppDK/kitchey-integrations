@@ -10,7 +10,7 @@
     "expired": "udløbet",
     "today": "i dag",
     "tomorrow": "i morgen",
-    "days": "{{days}} dage"
+    "days": "__days__ dage"
   },
   "none": "–",
   "error": {
@@ -18,8 +18,8 @@
     "no_data": "Ingen data fra Kitchey endnu.",
     "missing_credentials": "Indtast server-URL og adgangsnøgle.",
     "name_required": "Et navn er påkrævet.",
-    "not_on_list": "'{{name}}' står ikke på indkøbslisten.",
-    "not_in_stock": "'{{name}}' er ikke på lager.",
+    "not_on_list": "'__name__' står ikke på indkøbslisten.",
+    "not_in_stock": "'__name__' er ikke på lager.",
     "unit_missing": "Opbevaringssted ikke fundet – opdatér og vælg det igen.",
     "unit_deleted": "Opbevaringsstedet findes ikke længere i Kitchey."
   },
