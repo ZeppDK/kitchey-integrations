@@ -1,0 +1,31 @@
+{
+  "all_units": "Hele husstanden",
+  "stock": "På lager",
+  "list_type": {
+    "fridge": "Køleskab",
+    "freezer": "Fryser",
+    "pantry": "Skab"
+  },
+  "rel": {
+    "expired": "udløbet",
+    "today": "i dag",
+    "tomorrow": "i morgen",
+    "days": "{{days}} dage"
+  },
+  "none": "–",
+  "error": {
+    "not_configured": "Kitchey er ikke sat op – åbn appens indstillinger og indtast adgangsnøgle og husstand.",
+    "no_data": "Ingen data fra Kitchey endnu.",
+    "missing_credentials": "Indtast server-URL og adgangsnøgle.",
+    "name_required": "Et navn er påkrævet.",
+    "not_on_list": "'{{name}}' står ikke på indkøbslisten.",
+    "not_in_stock": "'{{name}}' er ikke på lager.",
+    "unit_missing": "Opbevaringssted ikke fundet – opdatér og vælg det igen.",
+    "unit_deleted": "Opbevaringsstedet findes ikke længere i Kitchey."
+  },
+  "pair": {
+    "no_units": "Ingen opbevaringssteder fundet i husstanden.",
+    "household_name": "Kitchey husstand",
+    "shopping_name": "Indkøbsliste"
+  }
+}

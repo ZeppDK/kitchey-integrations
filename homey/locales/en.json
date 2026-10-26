@@ -1,0 +1,31 @@
+{
+  "all_units": "Whole household",
+  "stock": "In stock",
+  "list_type": {
+    "fridge": "Fridge",
+    "freezer": "Freezer",
+    "pantry": "Pantry"
+  },
+  "rel": {
+    "expired": "expired",
+    "today": "today",
+    "tomorrow": "tomorrow",
+    "days": "{{days}} days"
+  },
+  "none": "–",
+  "error": {
+    "not_configured": "Kitchey is not configured – open the app settings and enter your token and household.",
+    "no_data": "No data from Kitchey yet.",
+    "missing_credentials": "Enter server URL and Personal Access Token.",
+    "name_required": "A name is required.",
+    "not_on_list": "'{{name}}' is not on the shopping list.",
+    "not_in_stock": "'{{name}}' is not in stock.",
+    "unit_missing": "Storage unit not found – refresh and pick it again.",
+    "unit_deleted": "This storage unit no longer exists in Kitchey."
+  },
+  "pair": {
+    "no_units": "No storage units found in this household.",
+    "household_name": "Kitchey household",
+    "shopping_name": "Shopping list"
+  }
+}

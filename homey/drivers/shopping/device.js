@@ -1,48 +1,46 @@
 'use strict';
 
 const Homey = require('homey');
+const { ensureCapabilities, setIfChanged } = require('../../lib/deviceStats');
+const { shoppingName } = require('../../lib/util');
+
+const MAX_LISTED_ITEMS = 15;
+const MAX_TEXT_ITEMS = 6;
 
 class ShoppingDevice extends Homey.Device {
   async onInit() {
-    this.log('ShoppingDevice init');
-    const app = this.homey.app;
-    if (app._lastShopping) {
-      await this.updateShopping(app._lastShopping).catch((err) => this.error('updateShopping failed:', err.message));
-    } else {
-      app._poll().catch((err) => this.error('poll failed:', err.message));
-    }
+    await ensureCapabilities(this);
+    const { snapshot } = this.homey.app;
+    if (snapshot) await this.updateFromSnapshot(snapshot);
+    else this.homey.app.poll().catch(() => {});
   }
 
-  async updateShopping(shopping) {
-    const unchecked = shopping.filter((s) => !s.checked);
+  async updateFromSnapshot(snapshot) {
+    const open = snapshot.openShopping;
+    await setIfChanged(this, 'measure_shopping_count', open.length);
 
-    // Update count capability
-    await this.setCapabilityValue('measure_shopping_count', unchecked.length).catch(() => {});
+    const names = open.map(shoppingName);
+    const text = names.length === 0
+      ? this.homey.__('none')
+      : names.slice(0, MAX_TEXT_ITEMS).join(', ') + (names.length > MAX_TEXT_ITEMS ? ` (+${names.length - MAX_TEXT_ITEMS})` : '');
+    await setIfChanged(this, 'kitchey_shopping_list', text);
 
-    // Remove dynamic capabilities beyond current list length
-    const existing = this.getCapabilities().filter((c) => c.startsWith('shopping_item.'));
-    for (const cap of existing) {
-      const idx = parseInt(cap.split('.')[1], 10);
-      if (idx >= unchecked.length) {
-        await this.removeCapability(cap).catch(() => {});
-      }
+    // One sub-capability per open item so the whole list is readable on the device card.
+    const listed = open.slice(0, MAX_LISTED_ITEMS);
+    for (const cap of this.getCapabilities().filter((c) => c.startsWith('shopping_item.'))) {
+      if (parseInt(cap.split('.')[1], 10) >= listed.length) await this.removeCapability(cap).catch(() => {});
     }
-
-    // Add/update one capability per unchecked item
-    for (let i = 0; i < unchecked.length; i++) {
+    for (let i = 0; i < listed.length; i++) {
       const capId = `shopping_item.${i}`;
-      if (!this.hasCapability(capId)) {
-        await this.addCapability(capId).catch(() => {});
+      const item = listed[i];
+      const name = shoppingName(item);
+      if (!this.hasCapability(capId)) await this.addCapability(capId).catch(() => {});
+      const options = this.getCapabilityOptions(capId) || {};
+      if (!options.title || options.title.en !== name) {
+        await this.setCapabilityOptions(capId, { title: { en: name, da: name } }).catch(() => {});
       }
-      const item = unchecked[i];
-      const name = item.product_name || item.custom_name || 'Ukendt';
-      await this.setCapabilityOptions(capId, { title: { en: name, da: name } }).catch(() => {});
-      await this.setCapabilityValue(capId, `${item.quantity} ${item.unit}`).catch(() => {});
+      await setIfChanged(this, capId, `${item.quantity} ${item.unit || 'stk'}`);
     }
-  }
-
-  async onDeleted() {
-    this.log('ShoppingDevice deleted');
   }
 }
 

@@ -8,19 +8,12 @@ class ShoppingDriver extends Homey.Driver {
   }
 
   async onPairListDevices() {
-    const householdId = this.homey.settings.get('household_id') || 'shopping_list';
-    return [
-      {
-        name: 'Indkøbsliste',
-        data: { household_id: householdId },
-      },
-    ];
-  }
-
-  updateDevices(shopping) {
-    for (const device of this.getDevices()) {
-      device.updateShopping(shopping).catch(() => {});
-    }
+    const app = this.homey.app;
+    if (!app.isConfigured()) throw new Error(this.homey.__('error.not_configured'));
+    return [{
+      name: this.homey.__('pair.shopping_name'),
+      data: { household_id: app.api.householdId },
+    }];
   }
 }
 

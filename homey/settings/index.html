@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="da">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kitchey Settings</title>
+  <title>Kitchey</title>
   <script src="https://cdn.athom.com/homey-apps-sdk-v3/homey.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -31,7 +31,7 @@
     }
     label { display: block; font-size: 13px; font-weight: 500; color: #444; margin-bottom: 5px; }
     .hint { font-size: 11px; color: #999; margin-bottom: 10px; line-height: 1.4; }
-    input {
+    input, select {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid #e0e0e0;
@@ -41,19 +41,22 @@
       margin-bottom: 14px;
       outline: none;
     }
-    input:focus { border-color: #4CAF82; background: white; }
+    input:focus, select:focus { border-color: #0d9e72; background: white; }
     .mono { font-family: monospace; font-size: 12px; }
     button {
       width: 100%;
       padding: 12px;
-      background: #4CAF82;
+      background: #0d9e72;
       color: white;
       border: none;
       border-radius: 10px;
       font-size: 15px;
       font-weight: 600;
       cursor: pointer;
+      margin-bottom: 10px;
     }
+    button.secondary { background: white; color: #0d9e72; border: 1px solid #0d9e72; }
+    button:disabled { opacity: 0.5; cursor: default; }
     #msg {
       padding: 10px 14px;
       border-radius: 8px;
@@ -61,73 +64,189 @@
       margin-bottom: 14px;
       display: none;
     }
-    #msg.ok  { background: #e8f5ee; color: #2e7d52; display: block; }
+    #msg.ok  { background: #e6f6f0; color: #0b6b4e; display: block; }
     #msg.err { background: #fde8e8; color: #c0392b; display: block; }
+    #status { font-size: 13px; color: #444; line-height: 1.6; }
+    #status b { color: #1a1a1a; }
   </style>
 </head>
 <body>
 
 <div class="card">
-  <h2>Server</h2>
-  <label>Server URL</label>
-  <p class="hint">Standard Kitchey-server, eller din selvhostede URL.</p>
+  <h2 data-i18n="server">Server</h2>
+  <label data-i18n="server_url">Server-URL</label>
+  <p class="hint" data-i18n="server_hint">Lad stå som standard for Kitchey-cloud, eller indtast din selvhostede URL.</p>
   <input type="url" id="server_url" placeholder="https://kitchey.aihuset.dk" />
+
+  <label data-i18n="token">Adgangsnøgle (Personal Access Token)</label>
+  <p class="hint" data-i18n="token_hint">Opret under Indstillinger → Avanceret → API-adgangsnøgler i Kitchey-appen.</p>
+  <input type="password" id="token" class="mono" placeholder="ft_live_…" autocomplete="off" />
+
+  <button id="test" class="secondary" data-i18n="test">Test forbindelse og hent husstande</button>
 </div>
 
 <div class="card">
-  <h2>Adgang</h2>
-  <label>Personal Access Token</label>
-  <p class="hint">Opret under Indstillinger → Avanceret → API-adgangsnøgler i Kitchey-appen.</p>
-  <input type="password" id="token" class="mono" placeholder="ft_live_…" autocomplete="off" />
-
-  <label>Husstand-ID</label>
-  <p class="hint">Find under Indstillinger → Mine hjem i Kitchey-appen.</p>
+  <h2 data-i18n="household">Husstand</h2>
+  <p class="hint" data-i18n="household_hint">Tryk på knappen ovenfor for at hente dine husstande, eller indtast husstand-ID manuelt.</p>
+  <select id="household_select" style="display:none"></select>
   <input type="text" id="household_id" class="mono" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" autocomplete="off" />
 </div>
 
 <div id="msg"></div>
-<button id="save">Gem indstillinger</button>
+<button id="save" data-i18n="save">Gem indstillinger</button>
+
+<div class="card">
+  <h2 data-i18n="status_title">Status</h2>
+  <div id="status" data-i18n="status_loading">Henter…</div>
+</div>
 
 <script>
+  var DEFAULT_URL = 'https://kitchey.aihuset.dk';
+  var I18N = {
+    en: {
+      server: 'Server', server_url: 'Server URL',
+      server_hint: 'Leave as default for Kitchey cloud, or enter your self-hosted URL.',
+      token: 'Personal Access Token',
+      token_hint: 'Create one in the Kitchey app: Settings → Advanced → API access keys.',
+      test: 'Test connection and load households',
+      household: 'Household',
+      household_hint: 'Use the button above to load your households, or enter the household ID manually.',
+      save: 'Save settings', status_title: 'Status', status_loading: 'Loading…',
+      saved: 'Settings saved', need_token: 'Enter your Personal Access Token', need_household: 'Choose or enter a household',
+      testing: 'Testing…', found: 'Found {n} household(s)', premium: 'Premium', free: 'Free',
+      not_configured: 'Not configured yet.', last_update: 'Last update', items: 'Items in stock', expired: 'Expired',
+      shopping: 'Open shopping items', units: 'Storage units', error: 'Error', never: 'never', nothing: 'none',
+    },
+    da: {
+      server: 'Server', server_url: 'Server-URL',
+      server_hint: 'Lad stå som standard for Kitchey-cloud, eller indtast din selvhostede URL.',
+      token: 'Adgangsnøgle (Personal Access Token)',
+      token_hint: 'Opret under Indstillinger → Avanceret → API-adgangsnøgler i Kitchey-appen.',
+      test: 'Test forbindelse og hent husstande',
+      household: 'Husstand',
+      household_hint: 'Tryk på knappen ovenfor for at hente dine husstande, eller indtast husstand-ID manuelt.',
+      save: 'Gem indstillinger', status_title: 'Status', status_loading: 'Henter…',
+      saved: 'Indstillinger gemt', need_token: 'Indtast din adgangsnøgle', need_household: 'Vælg eller indtast en husstand',
+      testing: 'Tester…', found: 'Fandt {n} husstand(e)', premium: 'Premium', free: 'Gratis',
+      not_configured: 'Ikke sat op endnu.', last_update: 'Sidste opdatering', items: 'Varer på lager', expired: 'Udløbet',
+      shopping: 'Åbne indkøb', units: 'Opbevaringssteder', error: 'Fejl', never: 'aldrig', nothing: 'ingen',
+    },
+  };
+  var T = I18N.da;
+
+  function $(id) { return document.getElementById(id); }
+
+  function flash(text, type) {
+    var el = $('msg');
+    el.textContent = text;
+    el.className = type;
+    clearTimeout(flash.timer);
+    flash.timer = setTimeout(function () { el.className = ''; el.style.display = 'none'; }, 6000);
+  }
+
+  function applyLanguage(lang) {
+    T = I18N[lang] || I18N.en;
+    document.documentElement.lang = lang;
+    var nodes = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < nodes.length; i++) {
+      var key = nodes[i].getAttribute('data-i18n');
+      if (T[key]) nodes[i].textContent = T[key];
+    }
+  }
+
+  function renderStatus(s) {
+    var el = $('status');
+    if (!s.configured) { el.textContent = T.not_configured; return; }
+    var rows = [];
+    if (s.lastError) rows.push('<b>' + T.error + ':</b> ' + escapeHtml(s.lastError));
+    rows.push('<b>' + T.last_update + ':</b> ' + (s.fetchedAt ? new Date(s.fetchedAt).toLocaleString() : T.never));
+    rows.push('<b>' + T.items + ':</b> ' + s.items + ' · <b>' + T.expired + ':</b> ' + s.expired);
+    rows.push('<b>' + T.shopping + ':</b> ' + s.openShopping);
+    rows.push('<b>' + T.units + ':</b> ' + (s.units.length ? escapeHtml(s.units.join(', ')) : T.nothing));
+    el.innerHTML = rows.join('<br>');
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"]/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c];
+    });
+  }
+
   function onHomeyReady(Homey) {
+    applyLanguage(Homey.getLanguage ? Homey.getLanguage() : 'en');
+
     Promise.all([
       Homey.get('server_url'),
       Homey.get('token'),
       Homey.get('household_id'),
-    ]).then(function(values) {
-      document.getElementById('server_url').value   = values[0] || 'https://kitchey.aihuset.dk';
-      document.getElementById('token').value        = values[1] || '';
-      document.getElementById('household_id').value = values[2] || '';
+    ]).then(function (values) {
+      $('server_url').value = values[0] || DEFAULT_URL;
+      $('token').value = values[1] || '';
+      $('household_id').value = values[2] || '';
       Homey.ready();
-    }).catch(function() {
-      Homey.ready();
-    });
+    }).catch(function () { Homey.ready(); });
 
-    document.getElementById('save').addEventListener('click', function() {
-      var serverUrl   = document.getElementById('server_url').value.trim() || 'https://kitchey.aihuset.dk';
-      var token       = document.getElementById('token').value.trim();
-      var householdId = document.getElementById('household_id').value.trim();
+    function loadStatus() {
+      Homey.api('GET', '/status', null, function (err, status) {
+        if (err) { $('status').textContent = T.error + ': ' + err.message; return; }
+        renderStatus(status);
+      });
+    }
+    loadStatus();
+    setInterval(loadStatus, 15000);
 
-      if (!token)       return flash('Indtast din Personal Access Token', 'err');
-      if (!householdId) return flash('Indtast dit husstand-ID', 'err');
-
-      Promise.all([
-        Homey.set('server_url',   serverUrl),
-        Homey.set('token',        token),
-        Homey.set('household_id', householdId),
-      ]).then(function() {
-        flash('✓ Indstillinger gemt', 'ok');
-      }).catch(function(e) {
-        flash('Fejl: ' + e.message, 'err');
+    $('test').addEventListener('click', function () {
+      var serverUrl = $('server_url').value.trim() || DEFAULT_URL;
+      var token = $('token').value.trim();
+      if (!token) return flash(T.need_token, 'err');
+      var btn = $('test');
+      btn.disabled = true;
+      flash(T.testing, 'ok');
+      Homey.api('POST', '/test', { server_url: serverUrl, token: token }, function (err, result) {
+        btn.disabled = false;
+        if (err) return flash(T.error + ': ' + err.message, 'err');
+        var select = $('household_select');
+        select.innerHTML = '';
+        result.households.forEach(function (h) {
+          var opt = document.createElement('option');
+          opt.value = h.id;
+          opt.textContent = (h.icon ? h.icon + ' ' : '') + h.name + ' (' + h.member_count + ')';
+          select.appendChild(opt);
+        });
+        if (result.households.length) {
+          select.style.display = 'block';
+          var current = $('household_id').value.trim();
+          var match = result.households.some(function (h) { return h.id === current; });
+          select.value = match ? current : result.households[0].id;
+          $('household_id').value = select.value;
+        }
+        var tier = result.isPremium === null ? '' : ' · ' + (result.isPremium ? T.premium : T.free);
+        flash('✓ ' + T.found.replace('{n}', result.households.length) + tier, 'ok');
       });
     });
 
-    function flash(text, type) {
-      var el = document.getElementById('msg');
-      el.textContent = text;
-      el.className = type;
-      setTimeout(function() { el.className = ''; el.style.display = 'none'; }, 4000);
-    }
+    $('household_select').addEventListener('change', function () {
+      $('household_id').value = this.value;
+    });
+
+    $('save').addEventListener('click', function () {
+      var serverUrl = $('server_url').value.trim() || DEFAULT_URL;
+      var token = $('token').value.trim();
+      var householdId = $('household_id').value.trim();
+      if (!token) return flash(T.need_token, 'err');
+      if (!householdId) return flash(T.need_household, 'err');
+
+      Promise.all([
+        Homey.set('server_url', serverUrl),
+        Homey.set('token', token),
+        Homey.set('household_id', householdId),
+      ]).then(function () {
+        flash('✓ ' + T.saved, 'ok');
+        setTimeout(loadStatus, 3000);
+      }).catch(function (e) {
+        flash(T.error + ': ' + e.message, 'err');
+      });
+    });
   }
 </script>
 </body>

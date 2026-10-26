@@ -128,60 +128,78 @@ title: Katalog       # optional
 
 ## Homey
 
-### Install via Homey App Store
+> **Not yet in the Homey App Store.** Until the app is published, install it by sideloading it with the Homey CLI. Requires a Homey Pro and Node.js 18+.
 
-Install directly from the [Homey App Store](https://homey.app/en-us/app/dk.kitchey.homey/) — no compilation needed.
-
-<details>
-<summary>Developer install (compile from source)</summary>
+### Install (sideload)
 
 ```bash
+npm install -g homey
+homey login
 cd homey
 npm install
 homey app install
 ```
 
-</details>
+`homey app install` installs the app permanently on your Homey Pro. Use `homey app run` instead for a development session with live logs.
 
 ### Setup
 
-1. Open the Kitchey app in Homey
-2. Go to app settings and enter:
-   - **Server URL** (default: `https://kitchey.aihuset.dk`)
-   - **Personal Access Token** (`ft_live_...`)
-   - **Household ID** (shown in the Kitchey app under Settings → Advanced)
-3. Save — the app polls immediately
-4. Go to **Devices → Add device → Kitchey** to add your storage units and shopping list
+1. Open the Kitchey app's settings in the Homey app
+2. Enter your **Server URL** (default: `https://kitchey.aihuset.dk`) and a **Personal Access Token** (`ft_live_...`)
+3. Press **Test connection and load households**, pick your household in the dropdown and **Save**
+4. Go to **Devices → Add → Kitchey** to add your devices
 
 ### Devices
 
-Add devices via the Homey pair wizard (Devices → Add device → Kitchey):
+- **Household overview** — items in stock, expiring within 3 / 7 days, expired, open shopping items, expired items alarm, next to expire, latest added
+- **Storage unit** — one device per storage unit, with items in stock, expiring within 3 / 7 days, expired, expired items alarm, next to expire and latest added
+- **Shopping list** — open shopping items, the shopping list as text, and one capability per open item (max 15)
 
-**Storage Unit** — one device per storage unit (Fryser, Køleskab, Kolonial, etc.), with three capabilities visible on its card:
-- **Items on stock** — total item count
-- **Expiring ≤3 days** — items expiring within 3 days
-- **Expiring ≤7 days** — items expiring within 7 days
-
-**Shopping List** — shows the count of unchecked shopping items.
-
-Devices update every **10 minutes** and immediately after any flow action.
+Numbers and alarms are logged to Homey Insights. Data updates every **5 minutes** and immediately after any Flow action. All cards and device texts are also available in Danish.
 
 ### Flow cards
 
 **Triggers**
-- *An item expires within X days* — fires once per item per day, tokens: item name, expiry date, quantity
-- *An item expires today* — fires on the expiry day, tokens: item name, quantity
-- *Shopping list has more than X items*
+- An item expires within X days
+- An item expires today
+- An item has expired
+- An item was added to stock
+- An item was removed from stock
+- An item was added to the shopping list
+- A shopping item was checked off
+- A shopping item was removed
+- The shopping list is complete
+- Shopping list grows above X items
+
+**Conditions**
+- A product is / isn't in stock
+- An item is / isn't on the shopping list
+- There are / are no expired items
+- Items are / aren't expiring within X days
+- Shopping list has / doesn't have more than X open items
 
 **Actions**
-- *Add [name] to shopping list* — with quantity and unit
-- *Remove [item] from shopping list* — autocomplete from unchecked items
-- *Mark [item] as found* — checks off a shopping item
-- *Mark [item] as used ([amount]×)* — decrements inventory
-- *Add [product] to inventory* — autocomplete from catalog, choose storage type and quantity
-- *Create catalog product [name]* — name, category, unit, optional brand
-- *Create storage unit [name] ([type])* — premium required on cloud
-- *Create shelf [name] in [unit]* — premium required on cloud
+- Add an item to the shopping list
+- Check off a shopping item
+- Check off a shopping item by name
+- Remove a shopping item
+- Remove a shopping item by name
+- Clear checked shopping items
+- Get the shopping list as text
+- Mark an item as used
+- Mark an item as used by name
+- Set the quantity of an item
+- Remove an item from stock
+- Add a catalog product to stock
+- Add an item to stock by name
+- Get the stock of a product
+- Get expiring items as text
+- Create a catalog product
+- Create a storage unit
+- Create a shelf in a storage unit
+- Refresh data from Kitchey now
+
+See [homey/README.md](homey/README.md) for arguments, tokens, dashboards, example Flows, self-hosting and troubleshooting.
 
 ---
 
