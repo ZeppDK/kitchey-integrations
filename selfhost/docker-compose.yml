@@ -1,13 +1,7 @@
-version: '3.9'
-
-# Kitchey — Self-hosted installation
-#
-# Kom i gang:
-#   1. Kopiér .env.example til .env og udfyld variablerne
-#   2. docker compose up -d
-#
-# Opdatering til nyeste version:
-#   docker compose pull && docker compose up -d
+# Kitchey — self-hosted
+# Kom i gang: kopiér .env.example til .env, udfyld den, og kør: docker compose up -d
+# Opdatér:    docker compose pull && docker compose up -d
+# Backup:     tag backup før opdatering, se "Backup og gendannelse" i selfhost/README.md
 
 services:
   db:
@@ -27,6 +21,7 @@ services:
       retries: 5
 
   app:
+    # latest som default. Pin evt. til major.minor (fx :1.2) for mere forudsigelige opdateringer.
     image: ghcr.io/zeppdk/kitchey:latest
     container_name: kitchey-app
     restart: unless-stopped
@@ -42,10 +37,11 @@ services:
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET mangler i .env}
       APP_URL: ${APP_URL:?APP_URL mangler i .env}
       SELF_HOSTED: "true"
+      REGISTRATION_OPEN: ${REGISTRATION_OPEN:-false}
       UPLOADS_DIR: /uploads
-      TZ: Europe/Copenhagen
+      TZ: ${TZ:-Europe/Copenhagen}
     volumes:
-      - ./uploads:/uploads
+      - uploads:/uploads
     ports:
       - "${PORT:-3035}:3000"
     healthcheck:
@@ -56,3 +52,4 @@ services:
 
 volumes:
   pgdata:
+  uploads:
