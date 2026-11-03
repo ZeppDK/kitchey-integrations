@@ -134,7 +134,7 @@ Efter ændringer i `.env` skal du køre `docker compose up -d`. Så genskabes co
 
 Kitchey self-host er gratis, og alle premium-funktioner er med. Udviklingen af appen, integrationerne og dette image bliver betalt af abonnementerne på den hostede tjeneste. Hvis du kører din egen server og synes om projektet, så giv et bidrag:
 
-- **PayPal:** <DONATIONSLINK>
+- **Buy Me a Coffee:** https://buymeacoffee.com/seppdk
 - Eller køb et abonnement i appen, selvom du ikke bruger det.
 
 Beløbet er helt op til dig. Det går til videre udvikling og til at holde integrationerne opdaterede.
