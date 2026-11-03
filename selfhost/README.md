@@ -8,8 +8,8 @@ Kør din egen Kitchey-server med Docker. Serveren kører fra det færdigbyggede 
 
 ```bash
 mkdir kitchey && cd kitchey
-curl -O https://raw.githubusercontent.com/ZeppDK/kitchey-integrations/main/selfhost/docker-compose.yml
-curl -O https://raw.githubusercontent.com/ZeppDK/kitchey-integrations/main/selfhost/.env.example
+curl -O https://raw.githubusercontent.com/ZeppDK/kitchey-integrations/master/selfhost/docker-compose.yml
+curl -O https://raw.githubusercontent.com/ZeppDK/kitchey-integrations/master/selfhost/.env.example
 cp .env.example .env    # udfyld DB_PASSWORD, JWT_SECRET og APP_URL
 docker compose up -d
 curl localhost:3035/api/health
