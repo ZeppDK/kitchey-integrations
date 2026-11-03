@@ -25,8 +25,7 @@ Tokens look like `ft_live_...` and give the same access as your account.
 
 By default both integrations connect to `https://kitchey.aihuset.dk`.
 
-If you self-host Kitchey, enter your own URL instead (e.g. `http://192.168.1.10:3035`). See the [Kitchey repo](https://github.com/ZeppDK/freshtrack) for self-hosting instructions.
-Self-hosting med Docker (færdigbygget image, opsætning, backup): se [selfhost/README.md](selfhost/README.md).
+If you self-host Kitchey, enter your own URL instead (e.g. `http://192.168.1.10:3035`). See [selfhost/README.md](selfhost/README.md) for self-hosting instructions (prebuilt Docker image, setup, backup).
 
 ---
 

@@ -112,7 +112,8 @@ Personal Access Tokens er bearer tokens. De må **aldrig** sendes over ukryptere
 | `SMTP_PASS` | — | SMTP-adgangskode |
 | `SMTP_FROM` | — | Afsenderadresse |
 | `FIREBASE_SERVICE_ACCOUNT` | — | Firebase service account JSON som én linje (Android-push) |
-| `APNS_KEY` | — | APNs-nøgle (iOS-push) |
+| `APNS_KEY` | — | APNs .p8-nøgle som én linje med `
+` (iOS-push) |
 | `APNS_KEY_ID` | — | APNs key ID |
 | `APNS_TEAM_ID` | — | APNs team ID |
 
