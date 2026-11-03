@@ -141,4 +141,26 @@ Beløbet er helt op til dig. Det går til videre udvikling og til at holde integ
 
 ## Licens
 
-Serverimaget er lukket kildekode. Gratis til privat brug. Må ikke redistribueres eller sælges. (endelig ordlyd følger)
+Kitchey-serverimaget (`ghcr.io/zeppdk/kitchey`) er lukket kildekode og ejes af Sepp / aihuset.dk.
+
+**Du må**
+- køre imaget gratis til privat, ikke-kommerciel brug, på så mange egne servere du vil
+- bruge alle funktioner, inkl. premium, uden abonnement
+- forbinde den officielle Kitchey-app, Home Assistant og Homey til din server
+
+**Du må ikke**
+- videredistribuere, sælge, udleje eller tilbyde imaget som en tjeneste til andre (hosting for tredjepart)
+- pakke imaget ud, dekompilere eller på anden måde udlede kildekoden, ud over hvad ufravigelig lov tillader
+- fjerne eller ændre navn, logo eller licensoplysninger
+
+**Ingen garanti.** Imaget leveres som det er. Du har selv ansvaret for backup, sikkerhed og drift
+af din server, herunder at den ikke eksponeres uden HTTPS. Vi hæfter ikke for tab af data.
+
+**Opdateringer** udgives efter bedste evne, uden løfte om support eller bagudkompatibilitet.
+Licensen kan ændres for fremtidige versioner; versioner du allerede har hentet, beholder den
+licens de blev udgivet under.
+
+Kommerciel brug eller hosting for andre? Skriv til kundeservice@aihuset.dk.
+
+Home Assistant-integrationen og Homey-appen i dette repo er ikke omfattet af ovenstående;
+de er udgivet under MIT-licensen (se [LICENSE](../LICENSE)).

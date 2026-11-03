@@ -234,3 +234,7 @@ See [homey/README.md](homey/README.md) for arguments, tokens, dashboards, exampl
 ## API reference
 
 See [docs/api.md](docs/api.md) for the full REST API used by both integrations.
+
+## License
+
+The Home Assistant integration and the Homey app in this repository are released under the [MIT License](LICENSE). The self-host server image (`ghcr.io/zeppdk/kitchey`) is closed source with its own terms, see [selfhost/README.md](selfhost/README.md#licens).
