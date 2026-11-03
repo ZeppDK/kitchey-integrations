@@ -1,6 +1,6 @@
 # Kitchey — self-hosting
 
-Kør din egen Kitchey-server med Docker. Serveren kører fra det færdigbyggede image `ghcr.io/zeppdk/kitchey`. Alle premium-funktioner er inkluderet uden abonnement.
+Kør din egen Kitchey-server med Docker. Serveren kører fra det færdigbyggede image `ghcr.io/zeppdk/kitchey`. Alle premium-funktioner er inkluderet uden abonnement: når du selv hoster, har vi ingen driftsudgifter, så du får det hele.
 
 ## Kom i gang
 
@@ -37,7 +37,7 @@ Mappen hedder `kitchey`, så volumenavnene bliver `kitchey_pgdata` og `kitchey_u
 2. Indtast serverens adresse, fx `https://kitchey.dit-domain.dk`.
 3. Log ind eller opret konto.
 
-> **Obs:** I butiks-appen (App Store / Google Play) kræver feltet Server-URL i dag et aktivt Kitchey-abonnement. Web-UI'et på serveren har ingen begrænsning.
+> **Obs:** I butiks-appen (App Store / Google Play) kræver feltet Server-URL et aktivt Kitchey-abonnement. Det er bevidst: abonnementet dækker den hostede tjeneste og appens vedligehold. Web-UI'et på din egen server har ingen begrænsning, og alt på serveren er premium.
 
 ## Home Assistant og Homey
 
@@ -129,6 +129,15 @@ Uden SMTP står password-reset-linket i serverlogen. Native push er valgfrit. Ud
 - **Reset-mail kommer ikke:** Uden SMTP står linket i `docker compose logs app`.
 
 Efter ændringer i `.env` skal du køre `docker compose up -d`. Så genskabes containeren med de nye værdier.
+
+## Støt projektet
+
+Kitchey self-host er gratis, og alle premium-funktioner er med. Udviklingen af appen, integrationerne og dette image bliver betalt af abonnementerne på den hostede tjeneste. Hvis du kører din egen server og synes om projektet, så giv et bidrag:
+
+- **PayPal:** <DONATIONSLINK>
+- Eller køb et abonnement i appen, selvom du ikke bruger det.
+
+Beløbet er helt op til dig. Det går til videre udvikling og til at holde integrationerne opdaterede.
 
 ## Licens
 
