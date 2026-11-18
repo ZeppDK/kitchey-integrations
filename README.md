@@ -79,6 +79,8 @@ After setup a **Kitchey** entry appears in the HA sidebar (fridge icon). It open
 
 Sensors update every **10 minutes** and immediately after any service call.
 
+The list attributes (`items`, `products`, `locations`) are available in the live state for cards, templates and automations, but are not stored in the recorder history. This keeps them under Home Assistant's 16 KB attribute limit no matter how large your inventory or catalog grows.
+
 ### Services
 
 | Service | Fields | Description |

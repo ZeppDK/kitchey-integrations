@@ -45,8 +45,12 @@ async def async_setup_entry(
     coordinator.async_add_listener(_add_new_unit_sensors)
 
 
+# The list attributes (items/products/locations) grow with the household and
+# exceed the recorder's 16 KB attribute limit. They stay in the live state, so
+# cards and templates keep working, but are kept out of the history database.
 class KitcheyExpiringSensor(CoordinatorEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _unrecorded_attributes = frozenset({"items"})
     _attr_native_unit_of_measurement = "items"
     _attr_icon = "mdi:food-off"
 
@@ -79,6 +83,7 @@ class KitcheyExpiringSensor(CoordinatorEntity, SensorEntity):
 
 class KitcheyShoppingSensor(CoordinatorEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _unrecorded_attributes = frozenset({"items"})
     _attr_native_unit_of_measurement = "items"
     _attr_icon = "mdi:cart"
 
@@ -108,6 +113,7 @@ class KitcheyShoppingSensor(CoordinatorEntity, SensorEntity):
 
 class KitcheyCatalogSensor(CoordinatorEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _unrecorded_attributes = frozenset({"products"})
     _attr_native_unit_of_measurement = "products"
     _attr_icon = "mdi:book-open-variant"
 
@@ -142,6 +148,7 @@ class KitcheyCatalogSensor(CoordinatorEntity, SensorEntity):
 
 class KitcheyStorageUnitSensor(CoordinatorEntity, SensorEntity):
     _attr_state_class = SensorStateClass.MEASUREMENT
+    _unrecorded_attributes = frozenset({"items", "locations"})
     _attr_native_unit_of_measurement = "items"
 
     _LIST_TYPE_ICONS = {
